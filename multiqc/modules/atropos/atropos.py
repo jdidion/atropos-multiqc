@@ -1,6 +1,9 @@
 """MultiQC module that reads JSON output from Atropos.
 
-Note: this code is mostly borrowed from the Cutadapt and FastQC MultiQC modules.
+Note: this code is mostly borrowed from the Cutadapt [1] and FastQC [2] MultiQC
+modules.
+1. https://github.com/ewels/MultiQC/blob/master/multiqc/modules/fastqc/fastqc.py
+2. https://github.com/ewels/MultiQC/blob/master/multiqc/modules/cutadapt/cutadapt.py
 """
 from __future__ import print_function
 from collections import OrderedDict
@@ -62,6 +65,8 @@ class MultiqcModule(BaseMultiqcModule):
             info="is a general-purpose NGS pre-processing tool that"\
                  "specializes in adatper- and quality-trimming.")
         
+        # List of sample IDs
+        self.atropos_samples
         # Collections of data dicts
         self.atropos_data = dict(general={}, trim={}, pre={}, post={})
         # Sections of the report
@@ -93,64 +98,23 @@ class MultiqcModule(BaseMultiqcModule):
     def add_atropos_data(self, data):
         sample_name = data['sample_name']
         self.add_data_source(fileobj, sample_name)
+        self.atropos_samples.add(data)
         for datatype in ('general', 'trim', 'pre', 'post'):
             if datatype in data:
                 self.atropos_data[datatype][sample_name] = data[datatype]
     
     def atropos_report(self):
+        # First, make sure sample names are sorted
+        self.atropos_samples = list(sorted(self.atropos_samples))
+        
         # Add to general stats
         if self.atropos_data['general']:
-            
-            
-            statuses = dict()
-            for s_name in self.fastqc_data:
-                for section, status in self.fastqc_data[s_name]['statuses'].items():
-                    try:
-                        statuses[section][s_name] = status
-                    except KeyError:
-                        statuses[section] = {s_name: status}
-            self.intro += '<script type="text/javascript">atropos_passfails = {};</script>'.format(json.dumps(statuses))
-            
-            """ Take the parsed stats from the Cutadapt report and add it to the
-            basic stats table at the top of the report.
-            """
-            headers = {}
-            headers['percent_trimmed'] = {
-                'title': '% Trimmed',
-                'description': '% Total Base Pairs trimmed',
-                'max': 100,
-                'min': 0,
-                'suffix': '%',
-                'scale': 'RdYlBu-rev',
-                'format': '{:.1f}%'
-            }
-            self.general_stats_addcols(self.atropos_data, headers)
-            
-            """ Generate the trimming length plot.
-            """
-            
-            html = ATROPOS_TRIMMED_LENGTH
-
-            pconfig = {
-                'id': 'cutadapt_plot',
-                'title': 'Lengths of Trimmed Sequences',
-                'ylab': 'Counts',
-                'xlab': 'Length Trimmed (bp)',
-                'xDecimals': False,
-                'ymin': 0,
-                'tt_label': '<b>{point.x} bp trimmed</b>: {point.y:.0f}',
-                'data_labels': [{'name': 'Counts', 'ylab': 'Count'},
-                                {'name': 'Obs/Exp', 'ylab': 'Observed / Expected'}]
-            }
-            
-            html += linegraph.plot(
-                [self.cutadapt_length_counts, self.cutadapt_length_obsexp],
-                pconfig)
-            
-            return html
+            self.atropos_general()
         
         # Add pre-trim stats
         if self.atropos_data['pre']:
+            self.atropos_stats_intro('pre')
+            
             self.sequence_quality_plot()
             self.per_seq_quality_plot()
             self.sequence_content_plot()
@@ -163,15 +127,157 @@ class MultiqcModule(BaseMultiqcModule):
         
         # Add trimming stats
         if self.atropos_data['trim']:
-            pass
+            self.atropos_trim_intro()
         
         # Add post-trim stats
         if self.atropos_data['post']:
-            pass
+            self.atropos_stats_intro('post')
+    
+    def atropos_general(self):
+        """Add some single-number stats to the basic statistics table at the
+        top of the report.
+        """
+        headers = OrderedDict()
+        headers['total_sequences'] = {
+            'title': 'M Seqs',
+            'description': 'Total Sequences (millions)',
+            'min': 0,
+            'scale': 'Blues',
+            'modify': lambda x: x / 1000000,
+            'shared_key': 'read_count'
+        }
+        headers['total_bp'] = {
+            'title': 'M bp',
+            'description': 'Total Base Pairs (millions)',
+            'min': 0,
+            'scale': 'Blues',
+            'modify': lambda x: x / 1000000,
+            'shared_key': 'base_count'
+        }
+        self.general_stats_addcols(self.atropos_data['general'], headers)
+    
+    def atropos_stats_intro(self, datatype):
+        # Add statuses to intro. Note that this is slightly different than
+        # FastQC: Atropos reports the relevant statistic, and the threshold
+        # for pass/warn/fail is configured in MutliQC (defaulting to
+        # the thresholds defined in FastQC).
 
+        statuses = dict()
+        for s_name in self.fastqc_data:
+            for section, status in self.fastqc_data[s_name]['statuses'].items():
+                try:
+                    statuses[section][s_name] = status
+                except KeyError:
+                    statuses[section] = {s_name: status}
+        self.intro += '<script type="text/javascript">atropos_passfails = {};</script>'.format(json.dumps(statuses))
+    
+    
+    
+        # Prep the data
+        data = dict()
+        for s_name in self.fastqc_data:
+            bs = self.fastqc_data[s_name]['basic_statistics']
+            data[s_name] = {
+                'percent_gc': bs['%GC'],
+                'avg_sequence_length': bs['avg_sequence_length'],
+                'total_sequences': bs['Total Sequences'],
+            }
+            try:
+                data[s_name]['percent_duplicates'] = 100 - bs['total_deduplicated_percentage']
+            except KeyError:
+                pass # Older versions of FastQC don't have this
+            # Add count of fail statuses
+            num_statuses = 0
+            num_fails = 0
+            for s in self.fastqc_data[s_name]['statuses'].values():
+                num_statuses += 1
+                if s == 'fail':
+                    num_fails += 1
+            data[s_name]['percent_fails'] = (float(num_fails)/float(num_statuses))*100.0
 
+        # Are sequence lengths interesting?
+        seq_lengths = [x['avg_sequence_length'] for x in data.values()]
+        hide_seq_length = False if max(seq_lengths) - min(seq_lengths) > 10 else True
 
+        
+        headers['percent_duplicates'] = {
+            'title': '% Dups',
+            'description': '% Duplicate Reads',
+            'max': 100,
+            'min': 0,
+            'suffix': '%',
+            'scale': 'RdYlGn-rev',
+            'format': '{:.1f}%'
+        }
+        headers['percent_gc'] = {
+            'title': '% GC',
+            'description': 'Average % GC Content',
+            'max': 100,
+            'min': 0,
+            'suffix': '%',
+            'scale': 'Set1',
+            'format': '{:.0f}%'
+        }
+        headers['avg_sequence_length'] = {
+            'title': 'Length',
+            'description': 'Average Sequence Length (bp)',
+            'min': 0,
+            'suffix': 'bp',
+            'scale': 'RdYlGn',
+            'format': '{:.0f}',
+            'hidden': hide_seq_length
+        }
+        headers['percent_fails'] = {
+            'title': '% Failed',
+            'description': 'Percentage of modules failed in FastQC report (includes those not plotted here)',
+            'max': 100,
+            'min': 0,
+            'suffix': '%',
+            'scale': 'Reds',
+            'format': '{:.0f}%',
+            'hidden': True
+        }
+        
+        self.general_stats_addcols(data, headers)
+    
+    
+    def atropos_trim_general(self):
+        """ Take the parsed stats from the Cutadapt report and add it to the
+        basic stats table at the top of the report.
+        """
+        headers = {}
+        headers['percent_trimmed'] = {
+            'title': '% Trimmed',
+            'description': '% Total Base Pairs trimmed',
+            'max': 100,
+            'min': 0,
+            'suffix': '%',
+            'scale': 'RdYlBu-rev',
+            'format': '{:.1f}%'
+        }
+        header['bp_processed']
+        self.general_stats_addcols(self.atropos_data, headers)
 
+        """ Generate the trimming length plot.
+        """
+
+        html = ATROPOS_TRIMMED_LENGTH
+
+        pconfig = {
+            'id': 'cutadapt_plot',
+            'title': 'Lengths of Trimmed Sequences',
+            'ylab': 'Counts',
+            'xlab': 'Length Trimmed (bp)',
+            'xDecimals': False,
+            'ymin': 0,
+            'tt_label': '<b>{point.x} bp trimmed</b>: {point.y:.0f}',
+            'data_labels': [{'name': 'Counts', 'ylab': 'Count'},
+                            {'name': 'Obs/Exp', 'ylab': 'Observed / Expected'}]
+        }
+
+        html += linegraph.plot(
+            [self.cutadapt_length_counts, self.cutadapt_length_obsexp],
+            pconfig)
     
     def parse_cutadapt_logs(self, f):
         """ Go through log file looking for cutadapt output """
@@ -348,84 +454,7 @@ class MultiqcModule(BaseMultiqcModule):
         if total_count > 0:
             self.fastqc_data[s_name]['basic_statistics']['avg_sequence_length'] = length_bp / total_count
 
-    def fastqc_general_stats(self):
-        """ Add some single-number stats to the basic statistics
-        table at the top of the report """
-
-        # Prep the data
-        data = dict()
-        for s_name in self.fastqc_data:
-            bs = self.fastqc_data[s_name]['basic_statistics']
-            data[s_name] = {
-                'percent_gc': bs['%GC'],
-                'avg_sequence_length': bs['avg_sequence_length'],
-                'total_sequences': bs['Total Sequences'],
-            }
-            try:
-                data[s_name]['percent_duplicates'] = 100 - bs['total_deduplicated_percentage']
-            except KeyError:
-                pass # Older versions of FastQC don't have this
-            # Add count of fail statuses
-            num_statuses = 0
-            num_fails = 0
-            for s in self.fastqc_data[s_name]['statuses'].values():
-                num_statuses += 1
-                if s == 'fail':
-                    num_fails += 1
-            data[s_name]['percent_fails'] = (float(num_fails)/float(num_statuses))*100.0
-
-        # Are sequence lengths interesting?
-        seq_lengths = [x['avg_sequence_length'] for x in data.values()]
-        hide_seq_length = False if max(seq_lengths) - min(seq_lengths) > 10 else True
-
-        headers = OrderedDict()
-        headers['percent_duplicates'] = {
-            'title': '% Dups',
-            'description': '% Duplicate Reads',
-            'max': 100,
-            'min': 0,
-            'suffix': '%',
-            'scale': 'RdYlGn-rev',
-            'format': '{:.1f}%'
-        }
-        headers['percent_gc'] = {
-            'title': '% GC',
-            'description': 'Average % GC Content',
-            'max': 100,
-            'min': 0,
-            'suffix': '%',
-            'scale': 'Set1',
-            'format': '{:.0f}%'
-        }
-        headers['avg_sequence_length'] = {
-            'title': 'Length',
-            'description': 'Average Sequence Length (bp)',
-            'min': 0,
-            'suffix': 'bp',
-            'scale': 'RdYlGn',
-            'format': '{:.0f}',
-            'hidden': hide_seq_length
-        }
-        headers['percent_fails'] = {
-            'title': '% Failed',
-            'description': 'Percentage of modules failed in FastQC report (includes those not plotted here)',
-            'max': 100,
-            'min': 0,
-            'suffix': '%',
-            'scale': 'Reds',
-            'format': '{:.0f}%',
-            'hidden': True
-        }
-        headers['total_sequences'] = {
-            'title': 'M Seqs',
-            'description': 'Total Sequences (millions)',
-            'min': 0,
-            'scale': 'Blues',
-            'modify': lambda x: x / 1000000,
-            'shared_key': 'read_count'
-        }
-        self.general_stats_addcols(data, headers)
-
+    
 
     def sequence_quality_plot (self):
         """ Create the HTML for the phred quality score plot """
