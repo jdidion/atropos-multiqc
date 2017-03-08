@@ -17,6 +17,8 @@ from multiqc import config
 from multiqc.plots import linegraph, bargraph
 from multiqc.modules.base_module import BaseMultiqcModule
 
+ATROPOS_PHASES = ('general', 'trim', 'pre', 'post')
+
 ## Hard-coded URLs
 
 ATROPOS_GITHUB_URL = "https://github.com/jdidion/atropos"
@@ -45,6 +47,8 @@ errors. A defined peak may be related to adapter length. See the
 <a href="{}" target="_blank">Atropos documentation</a> for more information on
 how these numbers are generated.</p>""".format(ATROPOS_DOC_URL)
 
+ATROPOS_PASSFAILS = "<script type="text/javascript">atropos_passfails = {};</script>"
+
 # Initialise the logger
 log = logging.getLogger(__name__)
 
@@ -66,9 +70,9 @@ class MultiqcModule(BaseMultiqcModule):
                  "specializes in adatper- and quality-trimming.")
         
         # List of sample IDs
-        self.atropos_samples
+        self.atropos_sample_ids = []
         # Collections of data dicts
-        self.atropos_data = dict(general={}, trim={}, pre={}, post={})
+        self.atropos_data = dict((section, {}) for section in ATROPOS_PHASES)
         # Sections of the report
         self.sections = []
         # Add to self.css and self.js to be included in template
@@ -89,23 +93,32 @@ class MultiqcModule(BaseMultiqcModule):
             data = json.load(fileobj)
             self.add_atropos_data(data)
         
-        if all(len(d) == 0 for d in self.atropos_data.values()):
+        num_samples = len(self.atropos_sample_ids)
+        if num_samples == 0:
             log.debug("Could not find any reports in {}".format(config.analysis_dir))
             raise UserWarning
         else:
-            log.info("Found {} reports".format(len(self.atropos_data)))
+            log.info("Found {} reports".format(num_samples))
     
     def add_atropos_data(self, data):
-        sample_name = data['sample_name']
-        self.add_data_source(fileobj, sample_name)
-        self.atropos_samples.add(data)
-        for datatype in ('general', 'trim', 'pre', 'post'):
-            if datatype in data:
-                self.atropos_data[datatype][sample_name] = data[datatype]
+        sample_id = data['sample_id']
+        self.add_data_source(fileobj, sample_id)
+        self.atropos_sample_ids.append(sample_id)
+        for phase in ATROPOS_PHASES:
+            if phase in data:
+                self.atropos_data[phase][sample_id] = data[phase]
     
     def atropos_report(self):
-        # First, make sure sample names are sorted
-        self.atropos_samples = list(sorted(self.atropos_samples))
+        if not self.atropos_samples:
+            return
+        
+        # First, make sure data is sorted
+        self.atropos_sample_ids = list(sorted(self.atropos_samples_ids))
+        for phase in ATROPOS_PHASES:
+            d = OrderedDict()
+            for sample_id in self.atropos_sample_ids:
+                d[sample_id] = self.atropos_data[phase][sample_id]
+            self.atropos_data[phase] = d
         
         # Add to general stats
         if self.atropos_data['general']:
@@ -156,21 +169,40 @@ class MultiqcModule(BaseMultiqcModule):
         }
         self.general_stats_addcols(self.atropos_data['general'], headers)
     
-    def atropos_stats_intro(self, datatype):
+    def atropos_stats_intro(self, phase, sections):
         # Add statuses to intro. Note that this is slightly different than
         # FastQC: Atropos reports the relevant statistic, and the threshold
         # for pass/warn/fail is configured in MutliQC (defaulting to
         # the thresholds defined in FastQC).
+        statuses = {}
+        for section in sections:
+            statuses[section.name] = {}
+            for sample_id in self.atropos_sample_ids:
+                status = section.get_status(self.atropos_data[phase][sample_id])
+                statuses[section.name][sample_id] = status
+        
+        self.intro += ATROPOS_PASSFAILS.format(json.dumps(statuses))
+        
 
-        statuses = dict()
-        for s_name in self.fastqc_data:
-            for section, status in self.fastqc_data[s_name]['statuses'].items():
-                try:
-                    statuses[section][s_name] = status
-                except KeyError:
-                    statuses[section] = {s_name: status}
-        self.intro += '<script type="text/javascript">atropos_passfails = {};</script>'.format(json.dumps(statuses))
+class Section(object):
+    def get_status(self, data):
+        if self.threshold_statistic in data:
+            stat = data[self.threshold_statistic]
+        else:
+            stat = self.compute_statistic(data)
+        return self.get_status_for(stat)
     
+    def get_status_for(self, stat):
+        # TODO: Add configuration for thresholds.
+        comparisons = (self.compare(stat, t) for t in self.default_thresholds)
+        for status, comp in zip(('pass', 'warn', 'fail'), comparisons):
+            if comp > 0:
+                return status
+        else:
+            return 'default'
+
+
+
     
     
         # Prep the data
