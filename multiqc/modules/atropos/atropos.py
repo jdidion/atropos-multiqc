@@ -3,12 +3,44 @@
 Note: this code is mostly borrowed from the Cutadapt and FastQC MultiQC modules.
 """
 from __future__ import print_function
+from collections import OrderedDict
 import logging
+import io
+import os
+import json
 import re
 
 from multiqc import config
-from multiqc.plots import linegraph
+from multiqc.plots import linegraph, bargraph
 from multiqc.modules.base_module import BaseMultiqcModule
+
+## Hard-coded URLs
+
+ATROPOS_GITHUB_URL = "https://github.com/jdidion/atropos"
+ATROPOS_DOC_URL = "http://atropos.readthedocs.org/en/latest/guide.html#how-to-read-the-report"
+
+## Assets
+
+ATROPOS_CSS = {
+    'assets/css/multiqc_atropos.css' :
+    os.path.join(os.path.dirname(__file__), 'assets', 'css', 'multiqc_fastqc.css')
+}
+ATROPOS_JS = {
+    'assets/js/multiqc_atropos.js' :
+    os.path.join(os.path.dirname(__file__), 'assets', 'js', 'multiqc_fastqc.js')
+}
+ATROPOS_COLORS = {
+    'pass': '#5cb85c', 'warn': '#f0ad4e', 'fail': '#d9534f', 'default': '#999'
+}
+
+## Static HTML/templates
+
+ATROPOS_TRIMMED_LENGTH = """
+<p>This plot shows the number of reads with certain lengths of adapter trimmed.
+Obs/Exp shows the raw counts divided by the number expected due to sequencing
+errors. A defined peak may be related to adapter length. See the
+<a href="{}" target="_blank">Atropos documentation</a> for more information on
+how these numbers are generated.</p>""".format(ATROPOS_DOC_URL)
 
 # Initialise the logger
 log = logging.getLogger(__name__)
@@ -17,41 +49,130 @@ class MultiqcModule(BaseMultiqcModule):
     """Atropos module class. Loads JSON ouptut for read trimming stats (which
     are equivalent to Cutadapt) and pre- and post-trimming stats (which are
     very similar to FastQC).
+    
+    Args:
+        from_config: Whether to load data from configured locations. This should
+            only be set to False in tests.
     """
-    def __init__(self):
+    def __init__(self, from_config=True):
         # Initialise the parent object
         super().__init__(
             name='Atropos', anchor='atropos',
-            href='https://github.com/jdidion/atropos',
+            href=ATROPOS_GITHUB_URL,
             info="is a general-purpose NGS pre-processing tool that"\
                  "specializes in adatper- and quality-trimming.")
         
-        # Find and load any Cutadapt reports
-        self.cutadapt_data = dict()
-        self.cutadapt_length_counts = dict()
-        self.cutadapt_length_exp = dict()
-        self.cutadapt_length_obsexp = dict()
-
-        for f in self.find_log_files(config.sp['cutadapt'], filehandles=True):
-            self.parse_cutadapt_logs(f)
-
-        if len(self.cutadapt_data) == 0:
+        # Collections of data dicts
+        self.atropos_data = dict(general={}, trim={}, pre={}, post={})
+        # Sections of the report
+        self.sections = []
+        # Add to self.css and self.js to be included in template
+        self.css = ATROPOS_CSS
+        self.js = ATROPOS_JS
+        # Colours to be used for plotting lines
+        self.status_colours = ATROPOS_JS
+            
+        if from_config:
+            self.init_from_config()
+            self.atropos_report()
+    
+    def init_from_config(self):
+        for f in self.find_log_files(
+                config.sp['atropos'], patterns=dict(fn='*.json'),
+                filehandles=True):
+            fileobj = f['f']
+            data = json.load(fileobj)
+            self.add_atropos_data(data)
+        
+        if all(len(d) == 0 for d in self.atropos_data.values()):
             log.debug("Could not find any reports in {}".format(config.analysis_dir))
             raise UserWarning
+        else:
+            log.info("Found {} reports".format(len(self.atropos_data)))
+    
+    def add_atropos_data(self, data):
+        sample_name = data['sample_name']
+        self.add_data_source(fileobj, sample_name)
+        for datatype in ('general', 'trim', 'pre', 'post'):
+            if datatype in data:
+                self.atropos_data[datatype][sample_name] = data[datatype]
+    
+    def atropos_report(self):
+        # Add to general stats
+        if self.atropos_data['general']:
+            
+            
+            statuses = dict()
+            for s_name in self.fastqc_data:
+                for section, status in self.fastqc_data[s_name]['statuses'].items():
+                    try:
+                        statuses[section][s_name] = status
+                    except KeyError:
+                        statuses[section] = {s_name: status}
+            self.intro += '<script type="text/javascript">atropos_passfails = {};</script>'.format(json.dumps(statuses))
+            
+            """ Take the parsed stats from the Cutadapt report and add it to the
+            basic stats table at the top of the report.
+            """
+            headers = {}
+            headers['percent_trimmed'] = {
+                'title': '% Trimmed',
+                'description': '% Total Base Pairs trimmed',
+                'max': 100,
+                'min': 0,
+                'suffix': '%',
+                'scale': 'RdYlBu-rev',
+                'format': '{:.1f}%'
+            }
+            self.general_stats_addcols(self.atropos_data, headers)
+            
+            """ Generate the trimming length plot.
+            """
+            
+            html = ATROPOS_TRIMMED_LENGTH
 
-        log.info("Found {} reports".format(len(self.cutadapt_data)))
+            pconfig = {
+                'id': 'cutadapt_plot',
+                'title': 'Lengths of Trimmed Sequences',
+                'ylab': 'Counts',
+                'xlab': 'Length Trimmed (bp)',
+                'xDecimals': False,
+                'ymin': 0,
+                'tt_label': '<b>{point.x} bp trimmed</b>: {point.y:.0f}',
+                'data_labels': [{'name': 'Counts', 'ylab': 'Count'},
+                                {'name': 'Obs/Exp', 'ylab': 'Observed / Expected'}]
+            }
+            
+            html += linegraph.plot(
+                [self.cutadapt_length_counts, self.cutadapt_length_obsexp],
+                pconfig)
+            
+            return html
+        
+        # Add pre-trim stats
+        if self.atropos_data['pre']:
+            self.sequence_quality_plot()
+            self.per_seq_quality_plot()
+            self.sequence_content_plot()
+            self.gc_content_plot()
+            self.n_content_plot()
+            self.seq_length_dist_plot()
+            self.seq_dup_levels_plot()
+            self.overrepresented_sequences()
+            self.adapter_content_plot()
+        
+        # Add trimming stats
+        if self.atropos_data['trim']:
+            pass
+        
+        # Add post-trim stats
+        if self.atropos_data['post']:
+            pass
 
-        # Write parsed report data to a file
-        self.write_data_file(self.cutadapt_data, 'multiqc_cutadapt')
-
-        # Basic Stats Table
-        self.cutadapt_general_stats_table()
-
-        # Trimming Length Profiles
-        # Only one section, so add to the intro
-        self.intro += self.cutadapt_length_trimmed_plot()
 
 
+
+    
     def parse_cutadapt_logs(self, f):
         """ Go through log file looking for cutadapt output """
         fh = f['f']
@@ -144,166 +265,15 @@ class MultiqcModule(BaseMultiqcModule):
 
 
 
-    def cutadapt_general_stats_table(self):
-        """ Take the parsed stats from the Cutadapt report and add it to the
-        basic stats table at the top of the report """
-
-        headers = {}
-        headers['percent_trimmed'] = {
-            'title': '% Trimmed',
-            'description': '% Total Base Pairs trimmed',
-            'max': 100,
-            'min': 0,
-            'suffix': '%',
-            'scale': 'RdYlBu-rev',
-            'format': '{:.1f}%'
-        }
-        self.general_stats_addcols(self.cutadapt_data, headers)
-
-
-    def cutadapt_length_trimmed_plot (self):
-        """ Generate the trimming length plot """
-        html = '<p>This plot shows the number of reads with certain lengths of adapter trimmed. \n\
-        Obs/Exp shows the raw counts divided by the number expected due to sequencing errors. A defined peak \n\
-        may be related to adapter length. See the \n\
-        <a href="http://cutadapt.readthedocs.org/en/latest/guide.html#how-to-read-the-report" target="_blank">cutadapt documentation</a> \n\
-        for more information on how these numbers are generated.</p>'
-
-        pconfig = {
-            'id': 'cutadapt_plot',
-            'title': 'Lengths of Trimmed Sequences',
-            'ylab': 'Counts',
-            'xlab': 'Length Trimmed (bp)',
-            'xDecimals': False,
-            'ymin': 0,
-            'tt_label': '<b>{point.x} bp trimmed</b>: {point.y:.0f}',
-            'data_labels': [{'name': 'Counts', 'ylab': 'Count'},
-                            {'name': 'Obs/Exp', 'ylab': 'Observed / Expected'}]
-        }
-
-        html += linegraph.plot([self.cutadapt_length_counts, self.cutadapt_length_obsexp], pconfig)
-
-        return html
+    
 
 
 
 
 
-#!/usr/bin/env python
 
-""" MultiQC module to parse output from FastQC
-"""
 
-############################################################
-######  LOOKING FOR AN EXAMPLE OF HOW MULTIQC WORKS?  ######
-############################################################
-#### Stop! This is one of the most complicated modules. ####
-#### Have a look at Kallisto for a simpler example.     ####
-############################################################
 
-from __future__ import print_function
-from collections import OrderedDict
-import io
-import json
-import logging
-import os
-import re
-import zipfile
-
-from multiqc import config
-from multiqc.plots import linegraph, bargraph
-from multiqc.modules.base_module import BaseMultiqcModule
-
-# Initialise the logger
-log = logging.getLogger(__name__)
-
-class MultiqcModule(BaseMultiqcModule):
-
-    def __init__(self):
-
-        # Initialise the parent object
-        super(MultiqcModule, self).__init__(name='FastQC', anchor='fastqc',
-        href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/",
-        info="is a quality control tool for high throughput sequence data,"\
-        " written by Simon Andrews at the Babraham Institute in Cambridge.")
-
-        self.fastqc_data = dict()
-
-        # Find and parse unzipped FastQC reports
-        for f in self.find_log_files(config.sp['fastqc']['data']):
-            s_name = self.clean_s_name(os.path.basename(f['root']), os.path.dirname(f['root']))
-            self.parse_fastqc_report(f['f'], s_name, f)
-
-        # Find and parse zipped FastQC reports
-        for f in self.find_log_files(config.sp['fastqc']['zip'], filecontents=False):
-            s_name = f['fn']
-            if s_name.endswith('_fastqc.zip'):
-                s_name = s_name[:-11]
-            # Skip if we already have this report - parsing zip files is slow..
-            if s_name in self.fastqc_data.keys():
-                log.debug("Skipping '{}' as already parsed '{}'".format(f['fn'], s_name))
-                continue
-            try:
-                fqc_zip = zipfile.ZipFile(os.path.join(f['root'], f['fn']))
-            except Exception as e:
-                log.warn("Couldn't read '{}' - Bad zip file".format(f['fn']))
-                log.debug("Bad zip file error:\n{}".format(e))
-                continue
-            # FastQC zip files should have just one directory inside, containing report
-            d_name = fqc_zip.namelist()[0]
-            try:
-                with fqc_zip.open(os.path.join(d_name, 'fastqc_data.txt')) as fh:
-                    r_data = fh.read().decode('utf8')
-                    self.parse_fastqc_report(r_data, s_name, f)
-            except KeyError:
-                log.warning("Error - can't find fastqc_raw_data.txt in {}".format(f))
-
-        if len(self.fastqc_data) == 0:
-            log.debug("Could not find any reports in {}".format(config.analysis_dir))
-            raise UserWarning
-
-        log.info("Found {} reports".format(len(self.fastqc_data)))
-
-        # Write the summary stats to a file
-        data = dict()
-        for s_name in self.fastqc_data:
-            data[s_name] = self.fastqc_data[s_name]['basic_statistics']
-            data[s_name].update(self.fastqc_data[s_name]['statuses'])
-        self.write_data_file(data, 'multiqc_fastqc')
-
-        # Add to self.css and self.js to be included in template
-        self.css = { 'assets/css/multiqc_fastqc.css' : os.path.join(os.path.dirname(__file__), 'assets', 'css', 'multiqc_fastqc.css') }
-        self.js = { 'assets/js/multiqc_fastqc.js' : os.path.join(os.path.dirname(__file__), 'assets', 'js', 'multiqc_fastqc.js') }
-
-        # Colours to be used for plotting lines
-        self.status_colours = { 'pass': '#5cb85c', 'warn': '#f0ad4e', 'fail': '#d9534f', 'default': '#999' }
-
-        # Add to the general statistics table
-        self.fastqc_general_stats()
-
-        # Add the statuses to the intro for multiqc_fastqc.js JavaScript to pick up
-        statuses = dict()
-        for s_name in self.fastqc_data:
-            for section, status in self.fastqc_data[s_name]['statuses'].items():
-                try:
-                    statuses[section][s_name] = status
-                except KeyError:
-                    statuses[section] = {s_name: status}
-        self.intro += '<script type="text/javascript">fastqc_passfails = {};</script>'.format(json.dumps(statuses))
-
-        # Start the sections
-        self.sections = list()
-
-        # Now add each section in order
-        self.sequence_quality_plot()
-        self.per_seq_quality_plot()
-        self.sequence_content_plot()
-        self.gc_content_plot()
-        self.n_content_plot()
-        self.seq_length_dist_plot()
-        self.seq_dup_levels_plot()
-        self.overrepresented_sequences()
-        self.adapter_content_plot()
 
     def parse_fastqc_report(self, file_contents, s_name=None, f=None):
         """ Takes contents from a fastq_data.txt file and parses out required
