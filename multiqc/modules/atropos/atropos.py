@@ -9,9 +9,12 @@ from __future__ import print_function
 from collections import OrderedDict
 import logging
 import io
+import math
+import operator
 import os
 import json
 import re
+import scipy.stats
 
 from multiqc import config
 from multiqc.plots import linegraph, bargraph
@@ -20,9 +23,10 @@ from multiqc.modules.base_module import BaseMultiqcModule
 ATROPOS_PHASES = ('general', 'trim', 'pre', 'post')
 
 ## Hard-coded URLs
+# TODO: eventually these need pointers to specific sections of the docs
 
 ATROPOS_GITHUB_URL = "https://github.com/jdidion/atropos"
-ATROPOS_DOC_URL = "http://atropos.readthedocs.org/en/latest/guide.html#how-to-read-the-report"
+ATROPOS_DOC_URL = "http://atropos.readthedocs.org/en/latest/guide.html"
 
 ## Assets
 
@@ -49,6 +53,29 @@ how these numbers are generated.</p>""".format(ATROPOS_DOC_URL)
 
 ATROPOS_PASSFAILS = "<script type="text/javascript">atropos_passfails = {};</script>"
 
+ATROPOS_BASE_QUALITY_HISTOGRAM = """
+<p>The mean quality value across each base position in the read. See the
+<a href="{}" target="_bkank">Atropos help</a>.</p>
+{{}}""".format(ATROPOS_DOC_URL)
+
+ATROPOS_SEQUENCE_QUALITY_PLOT = """
+<p>The number of reads with average quality scores. Shows if a subset of reads
+has poor quality. See the <a href="{}" target="_bkank">Atropos help</a>.</p>
+{{}}""".format(ATROPOS_DOC_URL)
+
+ATROPOS_SEQUENCE_GC_PLOT = """
+<p>The average GC content of reads. Normal random library typically have a
+roughly normal distribution of GC content. See the <a href="{}" target="_bkank">
+Atropos help</a>.</p>
+<p>The dashed black line shows theoretical GC content: {{}}.</p>
+{{}}""".format(ATROPOS_DOC_URL)
+
+ATROPOS_N_CONTENT_PLOT = """
+<p>The percentage of base calls at each position for which an N was called.
+See the <a href="{}" target="_bkank">Atropos help</a>.</p>
+{{}}
+""".format(ATROPOS_DOC_URL)
+
 # Initialise the logger
 log = logging.getLogger(__name__)
 
@@ -73,8 +100,21 @@ class MultiqcModule(BaseMultiqcModule):
         self.atropos_sample_ids = []
         # Collections of data dicts
         self.atropos_data = dict((section, {}) for section in ATROPOS_PHASES)
+        # Section objects
+        self.sections = [
+            PerBaseQuality(),
+            #PerTileQuality()
+            PerSequenceQuality(),
+            #PerBaseContent(),
+            PerSequenceGC(),
+            PerBaseN(),
+            #SequenceLength(),
+            #Duplication(),
+            #Contaminants(),
+            #Kmers()
+        ]
         # Sections of the report
-        self.sections = []
+        self.section_html = []
         # Add to self.css and self.js to be included in template
         self.css = ATROPOS_CSS
         self.js = ATROPOS_JS
@@ -126,25 +166,15 @@ class MultiqcModule(BaseMultiqcModule):
         
         # Add pre-trim stats
         if self.atropos_data['pre']:
-            self.atropos_stats_intro('pre')
-            
-            self.sequence_quality_plot()
-            self.per_seq_quality_plot()
-            self.sequence_content_plot()
-            self.gc_content_plot()
-            self.n_content_plot()
-            self.seq_length_dist_plot()
-            self.seq_dup_levels_plot()
-            self.overrepresented_sequences()
-            self.adapter_content_plot()
+            self.atropos_stats('pre')
         
         # Add trimming stats
         if self.atropos_data['trim']:
-            self.atropos_trim_intro()
+            self.atropos_trim()
         
         # Add post-trim stats
         if self.atropos_data['post']:
-            self.atropos_stats_intro('post')
+            self.atropos_stats('post')
     
     def atropos_general(self):
         """Add some single-number stats to the basic statistics table at the
@@ -169,40 +199,325 @@ class MultiqcModule(BaseMultiqcModule):
         }
         self.general_stats_addcols(self.atropos_data['general'], headers)
     
-    def atropos_stats_intro(self, phase, sections):
+    def atropos_stats(self, phase):
         # Add statuses to intro. Note that this is slightly different than
         # FastQC: Atropos reports the relevant statistic, and the threshold
         # for pass/warn/fail is configured in MutliQC (defaulting to
         # the thresholds defined in FastQC).
         statuses = {}
-        for section in sections:
-            statuses[section.name] = {}
-            for sample_id in self.atropos_sample_ids:
-                status = section.get_status(self.atropos_data[phase][sample_id])
-                statuses[section.name][sample_id] = status
+        for section in self.sections:
+            section_name = "{}_{}".format(phase, section.name)
+            section_data = self.atropos_data[phase]
+            statuses[section_name] = section.get_statuses(section_data)
+            self.section_html.append(section.plot(section_data))
         
         self.intro += ATROPOS_PASSFAILS.format(json.dumps(statuses))
-        
 
 class Section(object):
-    def get_status(self, data):
-        if self.threshold_statistic in data:
-            stat = data[self.threshold_statistic]
-        else:
-            stat = self.compute_statistic(data)
-        return self.get_status_for(stat)
+    def get_statuses(self, data, phase):
+        return dict(
+            (sample_id, self.get_status(sample_data, phase))
+            for sample_id, sample_data in data)
     
-    def get_status_for(self, stat):
+    def get_status(self, sample_data, phase):
+        if self.threshold_statistic in sample_data:
+            stat = sample_data[self.threshold_statistic]
+        else:
+            stat = self.compute_statistic(sample_data)
+        return self.get_status_for(stat, phase)
+    
+    def get_status_for(self, stat, phase):
         # TODO: Add configuration for thresholds.
-        comparisons = (self.compare(stat, t) for t in self.default_thresholds)
-        for status, comp in zip(('pass', 'warn', 'fail'), comparisons):
-            if comp > 0:
+        for status, threshold in zip(('fail', 'warn'), self.default_threshold):
+            if self.compare(stat, threshold):
                 return status
         else:
-            return 'default'
+            return 'pass'
 
+class PerBaseQuality(Section):
+    name = 'base_quality'
+    
+    def get_status_for(self, stat, phase):
+        lower_quartile, lowest_median = stat
+        if lower_quartile < 5 or lowest_median < 20:
+            return 'fail'
+        if lower_quartile < 10 or lowest_median < 25:
+            return 'warn'
+        return 'pass'
 
+    def plot(self, data):
+        """Create the HTML for the phred quality score plot.
+        
+        TODO: Add boxplots as in FastQC output.
+        """
+        plot_data = dict(
+            (sample_id, hist_to_means(values['base_quality']))
+            for sample_id, values in data.items())
+        
+        plot_config = {
+            'id': 'fastqc_per_base_sequence_quality_plot',
+            'title': 'Mean Quality Scores',
+            'ylab': 'Phred Score',
+            'xlab': 'Position (bp)',
+            'ymin': 0,
+            'xDecimals': False,
+            'tt_label': '<b>Base {point.x}</b>: {point.y:.2f}',
+            'colors': self.get_status_cols('per_base_sequence_quality'),
+            'yPlotBands': [
+                {'from': 28, 'to': 100, 'color': '#c3e6c3'},
+                {'from': 20, 'to': 28, 'color': '#e6dcc3'},
+                {'from': 0, 'to': 20, 'color': '#e6c3c3'},
+            ]
+        }
+        
+        return {
+            'name': 'Sequence Quality Histograms',
+            'anchor': 'atropos_per_base_sequence_quality',
+            'content': ATROPOS_BASE_QUALITY_HISTOGRAM.format(
+                linegraph.plot(plot_data, plot_config))
+        }
+    
+class PerTileQuality(Section):
+    name = 'tile_sequence_quality'
+    compare = operator.lt
+    threshold_statistic = 'min_tile_versus_mean'
+    default_thresholds = (-5, -2)
+    
+    def plot(self, data):
+        # TODO
+        pass
 
+class PerSequenceQuality(Section):
+    name = 'tile_sequence_quality'
+    compare = operator.lt
+    threshold_statistic = 'mode_sequence_quality'
+    default_thresholds = (20, 27)
+    
+    def plot(self, data):
+        """Create the HTML for the per-sequence quality score plot.
+        """
+        plot_data = dict(
+            (sample_id, hist_to_means(values['sequence_quality']))
+            for sample_id, values in data.items())
+
+        plot_config = {
+            'id': 'fastqc_per_sequence_quality_scores_plot',
+            'title': 'Per Sequence Quality Scores',
+            'ylab': 'Count',
+            'xlab': 'Mean Sequence Quality (Phred Score)',
+            'ymin': 0,
+            'xmin': 0,
+            'xDecimals': False,
+            'colors': self.get_status_cols('per_sequence_quality_scores'),
+            'tt_label': '<b>Phred {point.x}</b>: {point.y} reads',
+            'xPlotBands': [
+                {'from': 28, 'to': 100, 'color': '#c3e6c3'},
+                {'from': 20, 'to': 28, 'color': '#e6dcc3'},
+                {'from': 0, 'to': 20, 'color': '#e6c3c3'},
+            ]
+        }
+        
+        return {
+            'name': 'Per Sequence Quality Scores',
+            'anchor': 'atropos_per_sequence_quality_scores',
+            'content': ATROPOS_SEQUENCE_QUALITY_PLOT.format(
+                linegraph.plot(plot_data, plot_config))
+        }
+
+class NormalDistribution(object):
+    def __init__(self, mean, stdev):
+        self.mean = mean
+        self.sd2 = sd2 = 2 * self.stdev * self.stdev
+    
+    def __call__(self, value):
+        return (
+            math.pow(meth.e, -(math.pow(value - mean, 2) / self.sd2)) /
+            math.sqrt(self.sd2 * math.pi))
+
+class PerSequenceGC(Section):
+    name = 'sequence_gc'
+    compare = operator.gt
+    threshold_statistic = 'fraction_nonnormal'
+    default_thresholds = (0.3, 0.15)
+    
+    def plot(self, data):
+        """Create the HTML for the GC content plot.
+        """
+        plot_data = dict(
+            (sample_id, values['sequence_gc']['hist'])
+            for sample_id, values in data.items())
+        
+        totals = dict(
+            (sample_id, sum(gc.values()))
+            for sample_id, gc in plot_data.items())
+        
+        def normalize_gc(gc, total):
+            return dict(
+                (pct, count * 100 / total)
+                for pct, count in gc)
+        
+        plot_data_norm = dict(
+            (sample_id, normalize_gc(gc, totals[sample_id]))
+            for sample_id, gc in plot_data.items())
+        
+        def theoretical_gc(dist, total):
+            nd = NormalDistribution(dist['mean'], dist['stdev'])
+            return [nd(i) * total for i in range(101)]
+        
+        theoretical_data = dict(
+            (sample_id, theoretical_gc(
+                values['sequence_gc']['dist'], totals[sequence_id]))
+            for sample_id, values in data.items())
+        
+        plot_config = {
+            'id': 'atropos_per_sequence_gc_content_plot',
+            'title': 'Per Sequence GC Content',
+            'ylab': 'Count',
+            'xlab': '%GC',
+            'ymin': 0,
+            'xmax': 100,
+            'xmin': 0,
+            'yDecimals': False,
+            'tt_label': '<b>{point.x}% GC</b>: {point.y}',
+            'colors': self.get_status_cols('per_sequence_gc_content'),
+            'data_labels': [
+                {'name': 'Percentages', 'ylab': 'Percentage'},
+                {'name': 'Counts', 'ylab': 'Count'}
+            ]
+        }
+        
+        esconfig = {
+            'name': 'Theoretical GC Content',
+            'dashStyle': 'Dash',
+            'lineWidth': 2,
+            'color': '#000000',
+            'marker': { 'enabled': False },
+            'enableMouseTracking': False,
+            'showInLegend': False,
+        }
+        pconfig['extra_series'] = [ [dict(esconfig)], [dict(esconfig)] ]
+        pconfig['extra_series'][0][0]['data'] = theoretical_data
+        theoretical_gc_desc = .format(theoretical_gc_name)
+        
+        return {
+            'name': 'Per Sequence GC Content',
+            'anchor': 'atropos_per_sequence_gc_content',
+            'content': ATROPOS_SEQUENCE_GC_PLOT.format(
+                theoretical_gc_name,
+                linegraph.plot([plot_data_norm, plot_data], plot_config))
+        }
+
+class PerBaseN(Section):
+    name = 'per_base_N_content'
+    compare = operator.gt
+    threshold_statistic = 'frac_N'
+    default_thresholds = (0.2, 0.05)
+    
+    def plot(self, data):
+        """Create the HTML for the per base N content plot.
+        """
+        plot_data = dict(
+            (sample_id, values['frac_N'])
+            for sample_id, values in data.items())
+        
+        plot_config = {
+            'id': 'atropos_per_base_n_content_plot',
+            'title': 'Per Base N Content',
+            'ylab': 'Percentage N-Count',
+            'xlab': 'Position in Read (bp)',
+            'yCeiling': 100,
+            'yMinRange': 5,
+            'ymin': 0,
+            'xmin': 0,
+            'xDecimals': False,
+            'colors': self.get_status_cols('per_base_n_content'),
+            'tt_label': '<b>Base {point.x}</b>: {point.y:.2f}%',
+            'yPlotBands': [
+                {'from': 20, 'to': 100, 'color': '#e6c3c3'},
+                {'from': 5, 'to': 20, 'color': '#e6dcc3'},
+                {'from': 0, 'to': 5, 'color': '#c3e6c3'},
+            ]
+        }
+        
+        return {
+            'name': 'Per Base N Content',
+            'anchor': 'fastqc_per_base_n_content',
+            'content': ATROPOS_N_CONTENT_PLOT.format(
+                linegraph.plot(plot_data, plot_config))
+        }
+
+class SequenceLength(Section):
+    name = 'sequence_length'
+    threshold_statistic = 'length_range'
+    
+    def get_status_for(self, stat, phase):
+        if phase == 'pre':
+            min_len, max_len = stat
+            if min_len == 0:
+                return 'fail'
+            if min_len != max_len:
+                return 'warn'
+        return 'pass'
+    
+    def plot(self, data):
+        """Create the HTML for the Sequence Length Distribution plot.
+        """
+        plot_data = dict(
+            (sample_id, values['sequence_length'])
+            for sample_id, values in data.items())
+        
+        unique_lengths = set()
+        for lengths in plot_data.values():
+            unique_lengths.update(lengths.keys())
+        if len(unique_lengths) == 1:
+        
+        else:
+
+        data = dict()
+        seq_lengths = set()
+        multiple_lenths = False
+        for s_name in self.fastqc_data:
+            try:
+                data[s_name] = {self.avg_bp_from_range(d['length']): d['count'] for d in self.fastqc_data[s_name]['sequence_length_distribution']}
+                seq_lengths.update(data[s_name].keys())
+                if len(set(data[s_name].keys())) > 1:
+                    multiple_lenths = True
+            except KeyError:
+                pass
+        if len(data) == 0:
+            log.debug('sequence_length_distribution not found in FastQC reports')
+            return None
+
+        if not multiple_lenths:
+            lengths = 'bp , '.join([str(l) for l in list(seq_lengths)])
+            html = '<p>All samples have sequences of a single length ({}bp).'.format(lengths)
+            if len(seq_lengths) > 1:
+                html += ' See the <a href="#general_stats">General Statistics Table</a>.</p>'
+        else:
+            pconfig = {
+                'id': 'fastqc_sequence_length_distribution_plot',
+                'title': 'Sequence Length Distribution',
+                'ylab': 'Read Count',
+                'xlab': 'Sequence Length (bp)',
+                'ymin': 0,
+                'yMinTickInterval': 0.1,
+                'xDecimals': False,
+                'colors': self.get_status_cols('sequence_length_distribution'),
+                'tt_label': '<b>{point.x} bp</b>: {point.y}',
+            }
+            html =  '<p>The distribution of fragment sizes (read lengths) found. \
+                See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/7%20Sequence%20Length%20Distribution.html" target="_bkank">FastQC help</a>.</p>'
+            html += linegraph.plot(data, pconfig)
+
+        self.sections.append({
+            'name': 'Sequence Length Distribution',
+            'anchor': 'fastqc_sequence_length_distribution',
+            'content': html
+        }
+    
+    
+    
+    
     
     
         # Prep the data
@@ -488,79 +803,7 @@ class Section(object):
 
     
 
-    def sequence_quality_plot (self):
-        """ Create the HTML for the phred quality score plot """
-
-        data = dict()
-        for s_name in self.fastqc_data:
-            try:
-                data[s_name] = {self.avg_bp_from_range(d['base']): d['mean'] for d in self.fastqc_data[s_name]['per_base_sequence_quality']}
-            except KeyError:
-                pass
-        if len(data) == 0:
-            log.debug('sequence_quality not found in FastQC reports')
-            return None
-
-        pconfig = {
-            'id': 'fastqc_per_base_sequence_quality_plot',
-            'title': 'Mean Quality Scores',
-            'ylab': 'Phred Score',
-            'xlab': 'Position (bp)',
-            'ymin': 0,
-            'xDecimals': False,
-            'tt_label': '<b>Base {point.x}</b>: {point.y:.2f}',
-            'colors': self.get_status_cols('per_base_sequence_quality'),
-            'yPlotBands': [
-                {'from': 28, 'to': 100, 'color': '#c3e6c3'},
-                {'from': 20, 'to': 28, 'color': '#e6dcc3'},
-                {'from': 0, 'to': 20, 'color': '#e6c3c3'},
-            ]
-        }
-        self.sections.append({
-            'name': 'Sequence Quality Histograms',
-            'anchor': 'fastqc_per_base_sequence_quality',
-            'content': '<p>The mean quality value across each base position in the read. ' +
-                        'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/2%20Per%20Base%20Sequence%20Quality.html" target="_bkank">FastQC help</a>.</p>' +
-                        linegraph.plot(data, pconfig)
-        })
-
-
-    def per_seq_quality_plot (self):
-        """ Create the HTML for the per sequence quality score plot """
-
-        data = dict()
-        for s_name in self.fastqc_data:
-            try:
-                data[s_name] = {d['quality']: d['count'] for d in self.fastqc_data[s_name]['per_sequence_quality_scores']}
-            except KeyError:
-                pass
-        if len(data) == 0:
-            log.debug('per_seq_quality not found in FastQC reports')
-            return None
-
-        pconfig = {
-            'id': 'fastqc_per_sequence_quality_scores_plot',
-            'title': 'Per Sequence Quality Scores',
-            'ylab': 'Count',
-            'xlab': 'Mean Sequence Quality (Phred Score)',
-            'ymin': 0,
-            'xmin': 0,
-            'xDecimals': False,
-            'colors': self.get_status_cols('per_sequence_quality_scores'),
-            'tt_label': '<b>Phred {point.x}</b>: {point.y} reads',
-            'xPlotBands': [
-                {'from': 28, 'to': 100, 'color': '#c3e6c3'},
-                {'from': 20, 'to': 28, 'color': '#e6dcc3'},
-                {'from': 0, 'to': 20, 'color': '#e6c3c3'},
-            ]
-        }
-        self.sections.append({
-            'name': 'Per Sequence Quality Scores',
-            'anchor': 'fastqc_per_sequence_quality_scores',
-            'content': '<p>The number of reads with average quality scores. Shows if a subset of reads has poor quality. ' +
-                        'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/3%20Per%20Sequence%20Quality%20Scores.html" target="_bkank">FastQC help</a>.</p>' +
-                        linegraph.plot(data, pconfig)
-        })
+    
 
 
     def sequence_content_plot (self):
@@ -609,190 +852,8 @@ class Section(object):
         })
 
 
-    def gc_content_plot (self):
-        """ Create the HTML for the FastQC GC content plot """
 
-        data = dict()
-        data_norm = dict()
-        for s_name in self.fastqc_data:
-            try:
-                data[s_name] = {d['gc_content']: d['count'] for d in self.fastqc_data[s_name]['per_sequence_gc_content']}
-            except KeyError:
-                pass
-            else:
-                data_norm[s_name] = dict()
-                total = sum( [ c for c in data[s_name].values() ] )
-                for gc, count in data[s_name].items():
-                    data_norm[s_name][gc] = (count / total) * 100
-        if len(data) == 0:
-            log.debug('per_sequence_gc_content not found in FastQC reports')
-            return None
-
-        pconfig = {
-            'id': 'fastqc_per_sequence_gc_content_plot',
-            'title': 'Per Sequence GC Content',
-            'ylab': 'Count',
-            'xlab': '%GC',
-            'ymin': 0,
-            'xmax': 100,
-            'xmin': 0,
-            'yDecimals': False,
-            'tt_label': '<b>{point.x}% GC</b>: {point.y}',
-            'colors': self.get_status_cols('per_sequence_gc_content'),
-            'data_labels': [
-                {'name': 'Percentages', 'ylab': 'Percentage'},
-                {'name': 'Counts', 'ylab': 'Count'}
-            ]
-        }
-
-        # Try to find and plot a theoretical GC line
-        theoretical_gc = None
-        theoretical_gc_raw = None
-        theoretical_gc_name = None
-        for f in self.find_log_files(config.sp['fastqc']['theoretical_gc']):
-            if theoretical_gc_raw is not None:
-                log.warn("Multiple FastQC Theoretical GC Content files found, now using {}".format(f['fn']))
-            theoretical_gc_raw = f['f']
-            theoretical_gc_name = f['fn']
-        if theoretical_gc_raw is None:
-            tgc = getattr(config, 'fastqc_config', {}).get('fastqc_theoretical_gc', None)
-            if tgc is not None:
-                theoretical_gc_name = os.path.basename(tgc)
-                tgc_fn = 'fastqc_theoretical_gc_{}.txt'.format(tgc)
-                tgc_path = os.path.join(os.path.dirname(__file__), 'fastqc_theoretical_gc', tgc_fn)
-                if not os.path.isfile(tgc_path):
-                    tgc_path = tgc
-                try:
-                    with io.open (tgc_path, "r", encoding='utf-8') as f:
-                        theoretical_gc_raw = f.read()
-                except IOError:
-                    log.warn("Couldn't open FastQC Theoretical GC Content file {}".format(tgc_path))
-                    theoretical_gc_raw = None
-        if theoretical_gc_raw is not None:
-            theoretical_gc = list()
-            for l in theoretical_gc_raw.splitlines():
-                if '# FastQC theoretical GC content curve:' in l:
-                    theoretical_gc_name = l[39:]
-                elif not l.startswith('#'):
-                    s = l.split()
-                    try:
-                        theoretical_gc.append([float(s[0]), float(s[1])])
-                    except (TypeError, IndexError):
-                        pass
-
-        theoretical_gc_desc = ''
-        if theoretical_gc is not None:
-            # Calculate the count version of the theoretical data based on the largest data store
-            max_total = max([sum (d.values()) for d in data.values() ])
-            esconfig = {
-                'name': 'Theoretical GC Content',
-                'dashStyle': 'Dash',
-                'lineWidth': 2,
-                'color': '#000000',
-                'marker': { 'enabled': False },
-                'enableMouseTracking': False,
-                'showInLegend': False,
-            }
-            pconfig['extra_series'] = [ [dict(esconfig)], [dict(esconfig)] ]
-            pconfig['extra_series'][0][0]['data'] = theoretical_gc
-            pconfig['extra_series'][1][0]['data'] = [ [ d[0], (d[1]/100.0)*max_total ] for d in theoretical_gc ]
-            theoretical_gc_desc = '<p>The dashed black line shows theoretical GC content: {}.</p>'.format(theoretical_gc_name)
-
-        self.sections.append({
-            'name': 'Per Sequence GC Content',
-            'anchor': 'fastqc_per_sequence_gc_content',
-            'content': '<p>The average GC content of reads. Normal random library typically have a roughly normal distribution of GC content. ' +
-                        'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html" target="_bkank">FastQC help</a>.</p>' +
-                        theoretical_gc_desc + linegraph.plot([data_norm, data], pconfig)
-        })
-
-
-    def n_content_plot (self):
-        """ Create the HTML for the per base N content plot """
-
-        data = dict()
-        for s_name in self.fastqc_data:
-            try:
-                data[s_name] = {self.avg_bp_from_range(d['base']): d['n-count'] for d in self.fastqc_data[s_name]['per_base_n_content']}
-            except KeyError:
-                pass
-        if len(data) == 0:
-            log.debug('per_base_n_content not found in FastQC reports')
-            return None
-
-        pconfig = {
-            'id': 'fastqc_per_base_n_content_plot',
-            'title': 'Per Base N Content',
-            'ylab': 'Percentage N-Count',
-            'xlab': 'Position in Read (bp)',
-            'yCeiling': 100,
-            'yMinRange': 5,
-            'ymin': 0,
-            'xmin': 0,
-            'xDecimals': False,
-            'colors': self.get_status_cols('per_base_n_content'),
-            'tt_label': '<b>Base {point.x}</b>: {point.y:.2f}%',
-            'yPlotBands': [
-                {'from': 20, 'to': 100, 'color': '#e6c3c3'},
-                {'from': 5, 'to': 20, 'color': '#e6dcc3'},
-                {'from': 0, 'to': 5, 'color': '#c3e6c3'},
-            ]
-        }
-
-        self.sections.append({
-            'name': 'Per Base N Content',
-            'anchor': 'fastqc_per_base_n_content',
-            'content': '<p>The percentage of base calls at each position for which an N was called. ' +
-                        'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/6%20Per%20Base%20N%20Content.html" target="_bkank">FastQC help</a>.</p>' +
-                        linegraph.plot(data, pconfig)
-        })
-
-
-    def seq_length_dist_plot (self):
-        """ Create the HTML for the Sequence Length Distribution plot """
-
-        data = dict()
-        seq_lengths = set()
-        multiple_lenths = False
-        for s_name in self.fastqc_data:
-            try:
-                data[s_name] = {self.avg_bp_from_range(d['length']): d['count'] for d in self.fastqc_data[s_name]['sequence_length_distribution']}
-                seq_lengths.update(data[s_name].keys())
-                if len(set(data[s_name].keys())) > 1:
-                    multiple_lenths = True
-            except KeyError:
-                pass
-        if len(data) == 0:
-            log.debug('sequence_length_distribution not found in FastQC reports')
-            return None
-
-        if not multiple_lenths:
-            lengths = 'bp , '.join([str(l) for l in list(seq_lengths)])
-            html = '<p>All samples have sequences of a single length ({}bp).'.format(lengths)
-            if len(seq_lengths) > 1:
-                html += ' See the <a href="#general_stats">General Statistics Table</a>.</p>'
-        else:
-            pconfig = {
-                'id': 'fastqc_sequence_length_distribution_plot',
-                'title': 'Sequence Length Distribution',
-                'ylab': 'Read Count',
-                'xlab': 'Sequence Length (bp)',
-                'ymin': 0,
-                'yMinTickInterval': 0.1,
-                'xDecimals': False,
-                'colors': self.get_status_cols('sequence_length_distribution'),
-                'tt_label': '<b>{point.x} bp</b>: {point.y}',
-            }
-            html =  '<p>The distribution of fragment sizes (read lengths) found. \
-                See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/7%20Sequence%20Length%20Distribution.html" target="_bkank">FastQC help</a>.</p>'
-            html += linegraph.plot(data, pconfig)
-
-        self.sections.append({
-            'name': 'Sequence Length Distribution',
-            'anchor': 'fastqc_sequence_length_distribution',
-            'content': html
-        })
-
+    
 
     def seq_dup_levels_plot (self):
         """ Create the HTML for the Sequence Duplication Levels plot """
