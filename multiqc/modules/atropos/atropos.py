@@ -5,7 +5,7 @@ modules.
 1. https://github.com/ewels/MultiQC/blob/master/multiqc/modules/fastqc/fastqc.py
 2. https://github.com/ewels/MultiQC/blob/master/multiqc/modules/cutadapt/cutadapt.py
 """
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 from collections import OrderedDict
 import logging
 import io
@@ -74,7 +74,7 @@ class MultiqcModule(BaseMultiqcModule):
         # List of sample IDs
         self.atropos_sample_ids = []
         # Collections of data dicts
-        self.atropos_summary_data = OrderedDict()
+        self.atropos_data = OrderedDict()
         self.atropos_trim_data = OrderedDict()
         self.atropos_qc_data = dict(pre=OrderedDict(), post=OrderedDict())
         # Section objects
@@ -106,10 +106,10 @@ class MultiqcModule(BaseMultiqcModule):
         """Initialize module from JSON files discovered via MultiQC
         configuration.
         """
-        for f in self.find_log_files(
-                config.sp['atropos'], patterns=dict(fn='*.summary.json'),
+        for file_dict in self.find_log_files(
+                config.sp['atropos'], patterns=dict(fn='*.json'),
                 filehandles=True):
-            fileobj = f['f']
+            fileobj = file_dict['f']
             data = json.load(fileobj)
             self.add_atropos_data(data, fileobj)
         
@@ -121,35 +121,45 @@ class MultiqcModule(BaseMultiqcModule):
             log.info("Found {} reports".format(num_samples))
     
     def add_atropos_data(self, data=None, data_source=None):
-        """For each sample, Atropos generates a <sample>.summary.json file. That
+        """For each sample, Atropos generates a <sample>.json file. That
         file has summary information (numbers of files processed, description of
         the inputs (e.g. FASTA vs FASTQ, single vs paired-end), and a summary
-        of the analyses performed. It also has links to a JSON file containing
-        trimming summary statistics, and N JSON files containing QC information,
-        where N is the number of input files.
+        of the analyses performed.
         
         Args:
             data: Atropos summary dict.
             data_source: The file from which 'data' was loaded.
         """
+        close = False
         if data_source and isinstance(data_source, str):
-            data_source = open(data_source, 'rb')
+            data_source = open(data_source)
+            close = True
         if data is None:
             if data_source:
                 data = json.load(data_source)
+                if close:
+                    data_source.close()
             else:
-                raise ValueError("One of 'data' or 'data_source' must be provided")
+                raise ValueError(
+                    "One of 'data' or 'data_source' must be provided")
             
         sample_id = data['sample_id']
         self.atropos_sample_ids.append(sample_id)
-        self.atropos_summary_data[sample_id] = data
+        self.atropos_data[sample_id] = data
         if data_source:
             self.add_data_source(data_source, sample_id)
         
-        # Load trim data
-        if 'trim_stats' in data:
-            with open(data['trim_stats'], 'rb') as infile:
-                self.atropos_trim_data[sample_id] = json.load(infile)
+        if 'trim' in data:
+            self.atropos_trim_data[sample_id] = data['trim']
+        
+        if 'pre' in data:
+            for source, pre_data in data['pre'].items():
+                # TODO
+        
+        # TODO: handle multiplexed output
+        if 'post' in data and 'NoFilter' in data['post']:
+            for source, post_data in data['post']['NoFilter'].items():
+                # TODO
         
         # Load qc data
         if 'qc_stats' in data:
