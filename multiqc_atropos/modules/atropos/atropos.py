@@ -10,12 +10,11 @@ from collections import OrderedDict, defaultdict
 import logging
 import io
 import math
-from numpy import mean, multiply, divide, cumsum
 import operator
 import os
 import json
 import re
-
+from numpy import mean, multiply, divide, cumsum
 from multiqc import config
 from multiqc.plots import linegraph
 from multiqc.modules.base_module import BaseMultiqcModule
@@ -188,10 +187,11 @@ class MultiqcModule(BaseMultiqcModule):
                     break
         
         pairing = data['input']['input_read']
-        
-        def add_stats_data(phase, source, data):
+        input_names = data['input']['input_names']
+
+        def add_stats_data(phase, source, input_names, data):
             self.atropos_qc_data[phase][sample_id] = OrderedDict()
-            source_files = source.split(',')
+            source_files = input_names
             if pairing == 3:
                 self.atropos_qc_data[phase][sample_id] = [None, None]
                 for idx in range(2):
@@ -206,12 +206,12 @@ class MultiqcModule(BaseMultiqcModule):
         
         if 'pre' in data:
             for source, pre_data in data['pre'].items():
-                add_stats_data('pre', source, pre_data)
+                add_stats_data('pre', source, input_names, pre_data)
         
         # TODO: handle multiplexed output
         if 'post' in data and 'NoFilter' in data['post']:
             for source, post_data in data['post']['NoFilter'].items():
-                add_stats_data('post', source, post_data)
+                add_stats_data('post', source, input_names, post_data)
     
     def atropos_report(self):
         if not self.atropos_sample_ids:
@@ -412,10 +412,10 @@ def weighted_median(vals, counts_cumsum):
 def weighted_mean(vals, counts):
     return sum(multiply(vals, counts)) / sum(counts)
 
-def hist_to_means(values, base_counts):
+def hist_to_means(hist):
     return dict(
-        (pos, weighted_mean(values, counts))
-        for pos, counts in base_counts)
+        (pos, weighted_mean(hist['columns'], counts))
+        for pos, counts in hist['rows'].items())
 
 def get_status_cols(statuses):
     """Helper function - returns a list of colours according to the
@@ -507,8 +507,7 @@ class Section(object):
             return (content1,)
     
     def get_plot(self, statuses, plot_data):
-        raise self.plot_type.plot(
-            plot_data, self.get_plot_config(statuses))
+        return self.plot_type.plot(plot_data, self.get_plot_config(statuses))
     
     def wrap_plot_pair(self, content1, content2):
         return '<div class="pair-plot-wrapper">' + content1 + content2 + '<\div>'
@@ -544,12 +543,12 @@ class PerBaseQuality(Section):
         }
     
     def compute_statistic(self, data):
-        # base_qualities is in the form
-        # [[qualities], [[base1_counts], [base2_counts], ...]]
-        quals = data[0]
+        # base_qualities is in the form 
+        # { columns: qualities, rows: {pos: counts} }
+        quals = data['columns']
         min_lower_quartile = None
         min_median = None
-        for pos, base_counts in data[1]:
+        for base_counts in data['rows'].values():
             counts_cumsum = cumsum(base_counts)
             lower_quartile = weighted_lower_quantile(
                 quals,
@@ -571,17 +570,17 @@ class PerBaseQuality(Section):
         return PASS
     
     def get_sample_plot_data(self, data):
-        return hist_to_means(*data)
+        return hist_to_means(data)
 
 class PerTileQuality(Section):
-    name = 'tile_sequence_quality'
+    name = 'tile_sequence_qualities'
     compare = operator.lt
     threshold_statistic = 'min_tile_versus_mean'
     default_thresholds = (-5, -2)
     # TODO
 
 class PerSequenceQuality(Section):
-    name = 'tile_sequence_quality'
+    name = 'qualities'
     display = 'Per Sequence Quality Scores'
     anchor = 'atropos_per_sequence_quality_scores'
     compare = operator.lt
@@ -803,7 +802,7 @@ See the <a href="{}" target="_bkank">Atropos help</a>.</p>
         return data['frac_N']
 
 class SequenceLength(Section):
-    name = 'sequence_length'
+    name = 'lengths'
     display = 'Sequence Length Distribution'
     anchor = 'atropos_sequence_length_distribution'
     threshold_statistic = 'length_range'
