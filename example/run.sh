@@ -2,9 +2,7 @@ ATROPOS_HOME=~/projects/atropos
 atropos trim --max-reads 10000 \
   -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGCCGTCTTCTGCTTG \
   -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT \
-  -pe1 $ATROPOS_HOME/paper/data/wgbs/GM12878_WGBS.1.fq.gz \
-  -pe2 $ATROPOS_HOME/paper/data/wgbs/GM12878_WGBS.2.fq.gz \
-  -o test1.fq -p test2.fq \
+  -pe1 test.1.fq.gz -pe2 test.2.fq.gz -o trimmed.1.fq.gz -p trimmed.2.fq.gz \
   --report-file summary --report-formats txt json --stats both:tiles
   #-a AGATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG \
   #-A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT \

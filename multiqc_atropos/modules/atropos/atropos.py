@@ -393,6 +393,9 @@ def weighted_lower_quantile(vals, freqs, quantile):
             return vals[i-1] if i > 0 else vals[0]
     return values[-1]
 
+def weighted_mean(vals, counts):
+    return sum(multiply(vals, counts)) / sum(counts)
+
 def weighted_median(vals, counts_cumsum):
     total = counts_cumsum[-1]
     if total == 0:
@@ -409,8 +412,11 @@ def weighted_median(vals, counts_cumsum):
             break
     return float(val1 + val2) / 2
 
-def weighted_mean(vals, counts):
-    return sum(multiply(vals, counts)) / sum(counts)
+def mode(data):
+    """Given a sequence of (value, count) tuples, returns the value associated
+    with the largest count.
+    """
+    return tuple(sorted(data, key=lambda x: x[1]))[-1][0]
 
 def hist_to_means(hist):
     return dict(
@@ -468,7 +474,7 @@ class Section(object):
     
     def get_status_for(self, phase, stat):
         # TODO: Add configuration for thresholds.
-        for status, threshold in zip((FAIL, WARN), self.default_threshold):
+        for status, threshold in zip((FAIL, WARN), self.default_thresholds):
             if self.compare(stat, threshold):
                 return status
         else:
@@ -584,13 +590,15 @@ class PerSequenceQuality(Section):
     display = 'Per Sequence Quality Scores'
     anchor = 'atropos_per_sequence_quality_scores'
     compare = operator.lt
-    threshold_statistic = 'mode_sequence_quality'
     default_thresholds = (20, 27)
     html = """
 <p>The number of reads with average quality scores. Shows if a subset of reads
 has poor quality. See the <a href="{}" target="_bkank">Atropos help</a>.</p>
 {{}}""".format(ATROPOS_DOC_URL)
     plot_type = linegraph
+    
+    def compute_statistic(self, data):
+        return mode(data)
     
     def get_plot_config(self, statuses):
         return {
@@ -658,7 +666,7 @@ Click a heatmap row to see a line plot for that dataset.</p>""".format(ATROPOS_D
         return self.plot_html.format(json.dumps(data))
 
 class PerSequenceGC(Section):
-    name = 'sequence_gc'
+    name = 'gc'
     display = 'Per Sequence GC Content'
     anchor = 'atropos_per_sequence_gc_content'
     compare = operator.gt
@@ -834,7 +842,7 @@ See the <a href="#general_stats">General Statistics Table</a>.</p>"""
             for hist in data.values():
                 if len(hist) > 1:
                     multiple_lengths = True
-                unique_lengths.update(h[0] for h in hist)
+                unique_lengths.update(h.keys())
             if not multiple_lengths:
                 if len(unique_lengths) == 1:
                     msg = self.all_same_html
@@ -864,7 +872,7 @@ See the <a href="#general_stats">General Statistics Table</a>.</p>"""
             return html1
     
     def get_sample_plot_data(self, data):
-        return data['length']
+        return data['lengths']
 
     # These stats are not yet implemented in Atropos.
     #
