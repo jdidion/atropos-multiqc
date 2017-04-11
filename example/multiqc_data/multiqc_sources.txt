@@ -1,2 +1,4 @@
 Module	Section	Sample Name	Source
+Atropos: Post-trim QC	all_sections	test	/Users/didionjp/projects/atropos-multiqc/example/summary.json
 Atropos	all_sections	test	/Users/didionjp/projects/atropos-multiqc/example/summary.json
+Atropos: Pre-trim QC	all_sections	test	/Users/didionjp/projects/atropos-multiqc/example/summary.json

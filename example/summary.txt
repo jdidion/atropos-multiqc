@@ -2,7 +2,7 @@
 Atropos
 =======
 
-Atropos version: 1.0.23+114.geb6bd6d.dirty
+Atropos version: 1.0.23+115.g299dfba
 Python version: 3.5.2
 Command line parameters: trim --max-reads 10000 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGCCGTCTTCTGCTTG -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT -pe1 test.1.fq.gz -pe2 test.2.fq.gz -o trimmed.1.fq.gz -p trimmed.2.fq.gz --report-file summary --report-formats txt json --stats both:tiles
 
@@ -12,9 +12,9 @@ Input files:
   /Users/didionjp/projects/atropos-multiqc/example/test.1.fq.gz
   /Users/didionjp/projects/atropos-multiqc/example/test.2.fq.gz
 
-Start time: 2017-04-10T17:11:05.282360
-Wallclock time: 21.80 s (2180 us/read; 0.03 M reads/minute)
-CPU time (main process): 21.24 s
+Start time: 2017-04-11T10:49:53.834183
+Wallclock time: 22.80 s (2280 us/read; 0.03 M reads/minute)
+CPU time (main process): 22.06 s
 
 --------
 Trimming

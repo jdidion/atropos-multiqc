@@ -834,13 +834,13 @@ tbody .sorthandle {
   background-color: #ededed;
 }
 </style>
-<style type="text/css">/* CSS for the FastQC MultiQC Module */
+<style type="text/css">/* CSS for the Atropos MultiQC Module */
 
-/* FastQC statuses popovers */
-.fastqc_passfail_progress .progress-bar {
+/* Atropos statuses popovers */
+.atropos_passfail_progress .progress-bar {
   cursor: pointer;
 }
-.mqc-section-fastqc .popover .popover-content {
+.mqc-section-atropos .popover .popover-content {
   font-size: 11px;
   max-height: 300px;
   white-space: nowrap;
@@ -858,7 +858,7 @@ tbody .sorthandle {
   background-color: #f2dede;
   color: #a94442;
 }
-.fastqc-popover-intro {
+.atropos-popover-intro {
   margin: 5px 5px 0;
   padding: 3px 5px;
   border: 1px dashed #ccc;
@@ -867,7 +867,7 @@ tbody .sorthandle {
   color: #999;
   background-color: #fafafa;
 }
-.fastqc-popover-intro a {
+.atropos-popover-intro a {
   color: #999;
   text-decoration: underline;
 }
@@ -890,42 +890,46 @@ tbody .sorthandle {
   cursor: pointer;
 }
 
-.fastqc_passfail_progress {
+.atropos_passfail_progress {
   width: 100px;
   display: inline-block;
   margin: 0 0 -2px 20px;
 }
 
 
-#fastqc_seq_heatmap {
+#atropos_seq_heatmap {
   cursor: pointer;
 }
-#fastqc_seq_heatmap_div .hc-plot-wrapper {
+#atropos_seq_heatmap_div .hc-plot-wrapper {
   height: 300px;
 }
-#fastqc_seq_heatmap_footer {
+#atropos_seq_heatmap_footer {
   clear:both;
 }
-#fastqc_sequence_content_plot h5 {
+#atropos_sequence_content_plot h5 {
   display: inline-block;
   height: 18px;
 }
-.fastqc_seq_heatmap_key {
+.atropos_seq_heatmap_key {
   font-size: 12px;
 }
-.fastqc_seq_heatmap_key div {
+.atropos_seq_heatmap_key div {
   display: inline-block;
   width: 120px;
   margin: 0 8px;
 }
-.fastqc_seq_heatmap_key > span, .fastqc_seq_heatmap_key div > span {
+.atropos_seq_heatmap_key > span, .atropos_seq_heatmap_key div > span {
   display:inline-block;
   width: 60px;
 }
-#fastqc_seq_heatmap_key_t { border-bottom: 1px solid red; }
-#fastqc_seq_heatmap_key_c { border-bottom: 1px solid blue; }
-#fastqc_seq_heatmap_key_a { border-bottom: 1px solid green; }
-#fastqc_seq_heatmap_key_g { border-bottom: 1px solid black; }</style>
+.mqc-module-section {
+  padding: 10px;
+}
+
+#atropos_seq_heatmap_key_t { border-bottom: 1px solid red; }
+#atropos_seq_heatmap_key_c { border-bottom: 1px solid blue; }
+#atropos_seq_heatmap_key_a { border-bottom: 1px solid green; }
+#atropos_seq_heatmap_key_g { border-bottom: 1px solid black; }</style>
 
 <!-- Include javascript files -->
 <script type="text/javascript">/*! jQuery v1.11.3 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
@@ -4168,7 +4172,7 @@ function load_mqc_config(name){
 
 }
 </script>
-<script type="text/javascript">// Javascript for the FastQC MultiQC Mod
+<script type="text/javascript">// Javascript for the atropos MultiQC Mod
 
 ///////////////
 // Per Base Sequence Content
@@ -4187,16 +4191,16 @@ max_bp = 0;
 current_single_plot = undefined;
 
 // Function to plot heatmap
-function fastqc_seq_content_heatmap() {
+function atropos_seq_content_heatmap() {
 
     // Get sample names, rename and skip hidden samples
     sample_names = [];
     sample_statuses = [];
     var p_data = {};
     var hidden_samples = 0;
-    $.each(fastqc_seq_content_data, function(s_name, data){
+    $.each(atropos_seq_content_data, function(s_name, data){
         // rename sample names
-        var t_status = fastqc_passfails['per_base_sequence_content'][s_name];
+        var t_status = atropos_passfails['per_base_sequence_content'][s_name];
         $.each(window.mqc_rename_f_texts, function(idx, f_text){
             if(window.mqc_rename_regex_mode){
                 var re = new RegExp(f_text,'g');
@@ -4224,14 +4228,14 @@ function fastqc_seq_content_heatmap() {
         else { hidden_samples += 1; }
     });
     num_samples = sample_names.length;
-    $('#fastqc_seq_heatmap_div .samples-hidden-warning, #fastqc_seq_heatmap_div .fastqc-heatmap-no-samples').remove();
-    $('#fastqc_seq_heatmap_div .hc-plot-wrapper').show();
+    $('#atropos_seq_heatmap_div .samples-hidden-warning, #atropos_seq_heatmap_div .atropos-heatmap-no-samples').remove();
+    $('#atropos_seq_heatmap_div .hc-plot-wrapper').show();
     if(num_samples == 0){
-        $('#fastqc_seq_heatmap_div .hc-plot-wrapper').hide();
-        $('#fastqc_seq_heatmap_div').prepend('<p class="fastqc-heatmap-no-samples text-muted">No samples found.</p>');
+        $('#atropos_seq_heatmap_div .hc-plot-wrapper').hide();
+        $('#atropos_seq_heatmap_div').prepend('<p class="atropos-heatmap-no-samples text-muted">No samples found.</p>');
     }
     if(hidden_samples > 0){
-        $('#fastqc_seq_heatmap_div').prepend('<div class="samples-hidden-warning alert alert-warning"> \
+        $('#atropos_seq_heatmap_div').prepend('<div class="samples-hidden-warning alert alert-warning"> \
             <span class="glyphicon glyphicon-info-sign"></span> \
             <strong>Warning:</strong> '+hidden_samples+' samples hidden in toolbox. \
             <a href="#mqc_hidesamples" class="alert-link" onclick="mqc_toolbox_openclose(\'#mqc_hidesamples\', true); return false;">See toolbox.</a>\
@@ -4240,21 +4244,21 @@ function fastqc_seq_content_heatmap() {
     if(num_samples == 0){ return; }
 
     // Convert the CSS percentage size into pixels
-    c_width = $('#fastqc_seq_heatmap').parent().width() - 5; // -5 for status bar
-    c_height = $('#fastqc_seq_heatmap').parent().height() - 2; // -2 for bottom line padding
+    c_width = $('#atropos_seq_heatmap').parent().width() - 5; // -5 for status bar
+    c_height = $('#atropos_seq_heatmap').parent().height() - 2; // -2 for bottom line padding
     s_height = c_height / num_samples;
     // Minimum row height
     if(s_height < 2){
         s_height = 2;
         c_height = num_samples * 2;
-        $('#fastqc_seq_heatmap').parent().parent().height(c_height+10);
+        $('#atropos_seq_heatmap').parent().parent().height(c_height+10);
     }
     // Resize the canvas properties
-    $('#fastqc_seq_heatmap').prop({
+    $('#atropos_seq_heatmap').prop({
         'width': c_width,
         'height': c_height+1
     });
-    var canvas = document.getElementById('fastqc_seq_heatmap');
+    var canvas = document.getElementById('atropos_seq_heatmap');
     if (canvas && canvas.getContext) {
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = '#666666';
@@ -4297,7 +4301,7 @@ function fastqc_seq_content_heatmap() {
                 bp = parseInt(bp);
                 var this_width = (bp - last_bp) * (c_width / max_bp);
                 last_bp = bp;
-                // Very old versions of FastQC give counts instead of percentages
+                // Very old versions of atropos give counts instead of percentages
                 if(v['t'] > 100){
                     var t = v['t'] + v['a'] + v['c'] + v['g'];
                     v['t'] = (v['t']/t)*100;
@@ -4333,16 +4337,16 @@ function fastqc_seq_content_heatmap() {
 // Set up listeners etc on page load
 $(function () {
 
-    // Add the pass / warning / fails counts to each of the FastQC submodule headings
-    $.each(fastqc_passfails, function(k, vals){
-        var pid = '#fastqc_'+k;
+    // Add the pass / warning / fails counts to each of the atropos submodule headings
+    $.each(atropos_passfails, function(k, vals){
+        var pid = '#atropos_'+k;
         var total = 0;
         var v = { 'pass': 0, 'warn': 0, 'fail': 0 };
         $.each(vals, function(s_name, status){
             total += 1;
             v[status] += 1;
         });
-        var p_bar = '<div class="progress fastqc_passfail_progress"> \
+        var p_bar = '<div class="progress atropos_passfail_progress"> \
             <div class="progress-bar progress-bar-success" style="width: '+(v['pass']/total)*100+'%" title="'+v['pass']+'&nbsp;/&nbsp;'+total+' samples passed">'+v['pass']+'</div> \
             <div class="progress-bar progress-bar-warning" style="width: '+(v['warn']/total)*100+'%" title="'+v['warn']+'&nbsp;/&nbsp;'+total+' samples with warnings">'+v['warn']+'</div> \
             <div class="progress-bar progress-bar-danger" style="width: '+(v['fail']/total)*100+'%" title="'+v['fail']+'&nbsp;/&nbsp;'+total+' samples failed">'+v['fail']+'</div> \
@@ -4351,13 +4355,13 @@ $(function () {
     });
 
     // Create popovers on click
-    $('.mqc-section-fastqc .fastqc_passfail_progress .progress-bar').mouseover(function(){
+    $('.mqc-section-atropos .atropos_passfail_progress .progress-bar').mouseover(function(){
         // Does this element already have a popover?
         if ($(this).attr('data-original-title')) { return false; }
         // Create it
         var pid = $(this).closest('h3').attr('id');
         var k = pid.substr(7);
-        var vals = fastqc_passfails[k];
+        var vals = atropos_passfails[k];
         var passes = $(this).hasClass('progress-bar-success') ? true : false;
         var warns = $(this).hasClass('progress-bar-warning') ? true : false;
         var fails = $(this).hasClass('progress-bar-danger') ? true : false;
@@ -4380,10 +4384,10 @@ $(function () {
             template: '<div class="popover popover-'+pclass+'" role="tooltip"> \
                 <div class="arrow"></div>\
                 <h3 class="popover-title"></h3>\
-                <div class="fastqc-popover-intro">\
+                <div class="atropos-popover-intro">\
                     Click bar to fix in place <br>\
-                    <a href="#" class="fastqc-status-highlight"><span class="glyphicon glyphicon-pushpin"></span> Highlight these samples</a><br>\
-                    <a href="#" class="fastqc-status-hideothers"><span class="glyphicon glyphicon-eye-close"></span> Show only these samples</a>\
+                    <a href="#" class="atropos-status-highlight"><span class="glyphicon glyphicon-pushpin"></span> Highlight these samples</a><br>\
+                    <a href="#" class="atropos-status-hideothers"><span class="glyphicon glyphicon-eye-close"></span> Show only these samples</a>\
                 </div>\
                 <div class="popover-content"></div>\
             </div>'
@@ -4391,7 +4395,7 @@ $(function () {
     });
 
     // Listener for Status higlight click
-    $('.mqc-section-fastqc .fastqc_passfail_progress').on('click', '.fastqc-status-highlight', function(e){
+    $('.mqc-section-atropos .atropos_passfail_progress').on('click', '.atropos-status-highlight', function(e){
         e.preventDefault();
         // Get sample names and highlight colour
         var samples = $(this).parent().parent().find('.popover-content').html().split('<br>');
@@ -4413,7 +4417,7 @@ $(function () {
     });
 
     // Listener for Status hide others click
-    $('.mqc-section-fastqc .fastqc_passfail_progress').on('click', '.fastqc-status-hideothers', function(e){
+    $('.mqc-section-atropos .atropos_passfail_progress').on('click', '.atropos-status-hideothers', function(e){
         e.preventDefault();
         // Get sample names
         var samples = $(this).parent().parent().find('.popover-content').html().split('<br>');
@@ -4445,7 +4449,7 @@ $(function () {
     /////////
 
     // Seq Content heatmap mouse rollover
-    $('#fastqc_seq_heatmap').mousemove(function(e) {
+    $('#atropos_seq_heatmap').mousemove(function(e) {
 
         // Replace the heading above the heatmap
         var pos = findPos(this);
@@ -4460,7 +4464,7 @@ $(function () {
         if(s_status == 'pass'){ s_status_class = 'label-success'; }
         if(s_status == 'warn'){ s_status_class = 'label-warning'; }
         if(s_status == 'fail'){ s_status_class = 'label-danger'; }
-        $('#fastqc_per_base_sequence_content_plot .s_name').html(s_name + ' <span class="label s_status '+s_status_class+'">'+s_status+'</span>');
+        $('#atropos_per_base_sequence_content_plot .s_name').html(s_name + ' <span class="label s_status '+s_status_class+'">'+s_status+'</span>');
 
         // Show the sequence base percentages on the bar plots below
         // http://stackoverflow.com/questions/6735470/get-pixel-color-from-canvas-on-mouseover
@@ -4470,28 +4474,28 @@ $(function () {
         var seq_a = (p[1]/255)*100;
         var seq_c = (p[2]/255)*100;
         var seq_g = 100 - (seq_t + seq_a + seq_c);
-        $('#fastqc_seq_heatmap_key_t span').text(seq_t.toFixed(0)+'%');
-        $('#fastqc_seq_heatmap_key_c span').text(seq_c.toFixed(0)+'%');
-        $('#fastqc_seq_heatmap_key_a span').text(seq_a.toFixed(0)+'%');
-        $('#fastqc_seq_heatmap_key_g span').text(seq_g.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_t span').text(seq_t.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_c span').text(seq_c.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_a span').text(seq_a.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_g span').text(seq_g.toFixed(0)+'%');
 
         // Get base pair position from x pos
         var this_bp = Math.floor((x/c_width)*max_bp);
-        $('#fastqc_seq_heatmap_key_pos').text(this_bp+' bp');
+        $('#atropos_seq_heatmap_key_pos').text(this_bp+' bp');
     });
 
     // Remove sample name again when mouse leaves
-    $('#fastqc_seq_heatmap').mouseout(function(e) {
-      $('#fastqc_per_base_sequence_content_plot .s_name').html('<em class="text-muted">rollover for sample name</em>');
-      $('#fastqc_seq_heatmap_key_pos').text('-');
-      $('#fastqc_seq_heatmap_key_t span').text('-');
-      $('#fastqc_seq_heatmap_key_c span').text('-');
-      $('#fastqc_seq_heatmap_key_a span').text('-');
-      $('#fastqc_seq_heatmap_key_g span').text('-');
+    $('#atropos_seq_heatmap').mouseout(function(e) {
+      $('#atropos_per_base_sequence_content_plot .s_name').html('<em class="text-muted">rollover for sample name</em>');
+      $('#atropos_seq_heatmap_key_pos').text('-');
+      $('#atropos_seq_heatmap_key_t span').text('-');
+      $('#atropos_seq_heatmap_key_c span').text('-');
+      $('#atropos_seq_heatmap_key_a span').text('-');
+      $('#atropos_seq_heatmap_key_g span').text('-');
     });
 
     // Click sample
-    $('#fastqc_seq_heatmap').click(function(e) {
+    $('#atropos_seq_heatmap').click(function(e) {
       e.preventDefault();
       // Get label from y position
       var pos = findPos(this);
@@ -4503,40 +4507,40 @@ $(function () {
         plot_single_seqcontent(s_name);
       }
     });
-    $('#mqc-module-section-fastqc').on('click', '#fastqc_sequence_content_single_prev', function(e){
+    $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_prev', function(e){
         e.preventDefault();
         var idx = sample_names.indexOf(current_single_plot) - 1;
         if(idx < 0){ idx = sample_names.length - 1; }
         plot_single_seqcontent(sample_names[idx]);
     });
-    $('#mqc-module-section-fastqc').on('click', '#fastqc_sequence_content_single_next', function(e){
+    $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_next', function(e){
         e.preventDefault();
         var idx = sample_names.indexOf(current_single_plot) + 1;
         if(idx == sample_names.length){ idx = 0; }
         plot_single_seqcontent(sample_names[idx]);
     });
-    $('#mqc-module-section-fastqc').on('click', '#fastqc_sequence_content_single_back', function(e){
+    $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_back', function(e){
         e.preventDefault();
-        $('#fastqc_per_base_sequence_content_plot').slideDown();
-        $('#fastqc_sequence_content_single_wrapper').slideUp(function(){
+        $('#atropos_per_base_sequence_content_plot').slideDown();
+        $('#atropos_sequence_content_single_wrapper').slideUp(function(){
           $(this).remove();
         });
     });
 
     // Highlight the custom heatmap
     $(document).on('mqc_highlights mqc_hidesamples mqc_renamesamples mqc_plotresize', function(e){
-        fastqc_seq_content_heatmap();
+        atropos_seq_content_heatmap();
     });
     // Seq content - window resized
     $(window).resize(function() {
-        fastqc_seq_content_heatmap();
+        atropos_seq_content_heatmap();
     });
 
 });
 
 function plot_single_seqcontent(s_name){
   current_single_plot = s_name;
-  var data = fastqc_seq_content_data[s_name];
+  var data = atropos_seq_content_data[s_name];
   var plot_data = [
     {'name': '% T', 'data':[]},
     {'name': '% C', 'data':[]},
@@ -4553,18 +4557,18 @@ function plot_single_seqcontent(s_name){
   }
 
   // Create plot div if it doesn't exist, and hide overview
-  if($('#fastqc_sequence_content_single_wrapper').length == 0) {
-    $('#fastqc_per_base_sequence_content_plot').slideUp();
-    var newplot = '<div id="fastqc_sequence_content_single_wrapper"> \
-    <div id="fastqc_sequence_content_single_controls"><div class="btn-group"> \
-      <button class="btn btn-default btn-sm" id="fastqc_sequence_content_single_prev">&laquo; Prev</button> \
-      <button class="btn btn-default btn-sm" id="fastqc_sequence_content_single_next">Next &raquo;</button> \
-    </div> <button class="btn btn-default btn-sm" id="fastqc_sequence_content_single_back">Back to overview heatmap</button></div>\
-    <div class="hc-plot-wrapper"><div id="fastqc_sequence_content_single" class="hc-plot hc-line-plot"><small>loading..</small></div></div></div>';
-    $(newplot).insertAfter('#fastqc_per_base_sequence_content_plot').hide().slideDown();
+  if($('#atropos_sequence_content_single_wrapper').length == 0) {
+    $('#atropos_per_base_sequence_content_plot').slideUp();
+    var newplot = '<div id="atropos_sequence_content_single_wrapper"> \
+    <div id="atropos_sequence_content_single_controls"><div class="btn-group"> \
+      <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_prev">&laquo; Prev</button> \
+      <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_next">Next &raquo;</button> \
+    </div> <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_back">Back to overview heatmap</button></div>\
+    <div class="hc-plot-wrapper"><div id="atropos_sequence_content_single" class="hc-plot hc-line-plot"><small>loading..</small></div></div></div>';
+    $(newplot).insertAfter('#atropos_per_base_sequence_content_plot').hide().slideDown();
   }
 
-  $('#fastqc_sequence_content_single').highcharts({
+  $('#atropos_sequence_content_single').highcharts({
     chart: {
       type: 'line',
       zoomType: 'x'
@@ -4667,7 +4671,39 @@ mqc_config = {}
       <li>
         <a href="#atropos" class="nav-l1">Atropos</a>
         <ul>
-        
+        <li>
+            <a href="#atropos_trimmed_length" class="nav-l2">Trimmed length</a>
+          </li>
+        </ul>
+      </li>
+      
+      <li>
+        <a href="#atropos-pre" class="nav-l1">Atropos: Pre-trim QC</a>
+        <ul>
+        <li>
+            <a href="#atropos_per_base_sequence_quality_pre" class="nav-l2">Sequence Quality Histograms</a>
+          </li><li>
+            <a href="#atropos_per_sequence_quality_scores_pre" class="nav-l2">Per Sequence Quality Scores</a>
+          </li><li>
+            <a href="#atropos_per_sequence_gc_content_pre" class="nav-l2">Per Sequence GC Content</a>
+          </li><li>
+            <a href="#atropos_per_base_n_content_pre" class="nav-l2">Per Base N Content</a>
+          </li>
+        </ul>
+      </li>
+      
+      <li>
+        <a href="#atropos-post" class="nav-l1">Atropos: Post-trim QC</a>
+        <ul>
+        <li>
+            <a href="#atropos_per_base_sequence_quality_post" class="nav-l2">Sequence Quality Histograms</a>
+          </li><li>
+            <a href="#atropos_per_sequence_quality_scores_post" class="nav-l2">Per Sequence Quality Scores</a>
+          </li><li>
+            <a href="#atropos_per_sequence_gc_content_post" class="nav-l2">Per Sequence GC Content</a>
+          </li><li>
+            <a href="#atropos_per_base_n_content_post" class="nav-l2">Per Base N Content</a>
+          </li>
         </ul>
       </li>
       
@@ -4915,7 +4951,7 @@ mqc_config = {}
   </div>
   <a href="#top" class="mqc-toplink hidden-xs" title="Go to top"><span class="glyphicon glyphicon-chevron-up"></span></a>
 </div>
-<script type="text/javascript">var report_id = 'mqc_report_p9sje807hxcboqy5zi6m'; </script>
+<script type="text/javascript">var report_id = 'mqc_report_ljbf2xye7uqop3nrhswz'; </script>
 
 
 <div class="mainpage">
@@ -4941,7 +4977,7 @@ mqc_config = {}
 
 
 <div id="analysis_dirs_wrapper">
-  <p>Report generated on 2017-04-11, 08:04 based on data in:
+  <p>Report generated on 2017-04-11, 16:04 based on data in:
   <code class="mqc_analysis_path">/Users/didionjp/projects/atropos-multiqc/example</code>
   
 </div>
@@ -4982,7 +5018,7 @@ mqc_config = {}
         <div id="general_stats_table_container" class="mqc_table_container">
             <div class="table-responsive">
                 <table id="general_stats_table" class="table table-condensed mqc_table">
-        <thead><tr><th class="rowheader">Sample Name</th><th id="header_kxvb_input_format" class="chroma-col kxvb_input_format " data-chroma-scale="GnBu" data-chroma-max="-inf" data-chroma-min="inf" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: Input File Format">Format</span></th><th id="header_qzxk_total_record_count" class="chroma-col qzxk_total_record_count " data-chroma-scale="Blues" data-chroma-max="0.01" data-chroma-min="0.0" data-namespace="Atropos"  data-shared-key=read_count><span data-toggle="tooltip" title="Atropos: Total Sequences (millions)">M Seqs</span></th><th id="header_ysjx_mean_sequence_length" class="chroma-col ysjx_mean_sequence_length " data-chroma-scale="RdYlGn" data-chroma-max="125.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: Average Sequence Length (bp)">Length</span></th><th id="header_ansr_percent_fails_pre" class="chroma-col ansr_percent_fails_pre hidden" data-chroma-scale="Reds" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: Percentage of Atropos QC modules failed (pre-trimming)">% Failed (pre-trimming)</span></th><th id="header_fomc_percent_fails_post" class="chroma-col fomc_percent_fails_post hidden" data-chroma-scale="Reds" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: Percentage of Atropos QC modules failed (post-trimming)">% Failed (post-trimming)</span></th><th id="header_fikp_fraction_records_with_adapters" class="chroma-col fikp_fraction_records_with_adapters " data-chroma-scale="RdYlBu-rev" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: % Total Reads with Adapters">% Reads w/ Adapters</span></th><th id="header_celx_fraction_bp_trimmed" class="chroma-col celx_fraction_bp_trimmed " data-chroma-scale="RdYlBu-rev" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: % Total Base Pairs trimmed">% Trimmed</span></th></tr></thead><tbody><tr><th class="rowheader" data-original-sn="test">test</th><td class="data-coloured kxvb_input_format "><div class="wrapper"><span class="bar" style="width:0%;"></span><span class="val">FASTQ, Paired, w/ Qualities</span></div></td><td class="data-coloured qzxk_total_record_count "><div class="wrapper"><span class="bar" style="width:100.0%;"></span><span class="val">0.0</span></div></td><td class="data-coloured ysjx_mean_sequence_length "><div class="wrapper"><span class="bar" style="width:100.0%;"></span><span class="val">125</span></div></td><td class="data-coloured ansr_percent_fails_pre hidden"><div class="wrapper"><span class="bar" style="width:100%;"></span><span class="val">200%</span></div></td><td class="data-coloured fomc_percent_fails_post hidden"><div class="wrapper"><span class="bar" style="width:100.0%;"></span><span class="val">100%</span></div></td><td class="data-coloured fikp_fraction_records_with_adapters "><div class="wrapper"><span class="bar" style="width:0.1265%;"></span><span class="val">0.1%</span></div></td><td class="data-coloured celx_fraction_bp_trimmed "><div class="wrapper"><span class="bar" style="width:0.031300400000000006%;"></span><span class="val">0.0%</span></div></td></tr></tbody></table></div></div>
+        <thead><tr><th class="rowheader">Sample Name</th><th id="header_qmcw_input_format" class="chroma-col qmcw_input_format " data-chroma-scale="GnBu" data-chroma-max="-inf" data-chroma-min="inf" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: Input File Format">Format</span></th><th id="header_ptga_total_record_count" class="chroma-col ptga_total_record_count " data-chroma-scale="Blues" data-chroma-max="0.01" data-chroma-min="0.0" data-namespace="Atropos"  data-shared-key=read_count><span data-toggle="tooltip" title="Atropos: Total Sequences (millions)">M Seqs</span></th><th id="header_wyxd_mean_sequence_length" class="chroma-col wyxd_mean_sequence_length " data-chroma-scale="RdYlGn" data-chroma-max="125.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: Average Sequence Length (bp)">Length</span></th><th id="header_dlqx_fraction_bp_trimmed" class="chroma-col dlqx_fraction_bp_trimmed " data-chroma-scale="RdYlBu-rev" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: % Total Base Pairs trimmed">% Trimmed</span></th><th id="header_svze_fraction_records_with_adapters" class="chroma-col svze_fraction_records_with_adapters " data-chroma-scale="RdYlBu-rev" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos" ><span data-toggle="tooltip" title="Atropos: % Total Reads with Adapters">% Reads w/ Adapters</span></th><th id="header_wofx_percent_fails_pre" class="chroma-col wofx_percent_fails_pre hidden" data-chroma-scale="Reds" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos: Pre-trim QC" ><span data-toggle="tooltip" title="Atropos: Pre-trim QC: Percentage of Atropos QC modules failed (pre-trimming)">% Failed (pre-trimming)</span></th><th id="header_zmwx_percent_fails_post" class="chroma-col zmwx_percent_fails_post hidden" data-chroma-scale="Reds" data-chroma-max="100.0" data-chroma-min="0.0" data-namespace="Atropos: Post-trim QC" ><span data-toggle="tooltip" title="Atropos: Post-trim QC: Percentage of Atropos QC modules failed (post-trimming)">% Failed (post-trimming)</span></th></tr></thead><tbody><tr><th class="rowheader" data-original-sn="test">test</th><td class="data-coloured qmcw_input_format "><div class="wrapper"><span class="bar" style="width:0%;"></span><span class="val">FASTQ, Paired, w/ Qualities</span></div></td><td class="data-coloured ptga_total_record_count "><div class="wrapper"><span class="bar" style="width:100.0%;"></span><span class="val">0.0</span></div></td><td class="data-coloured wyxd_mean_sequence_length "><div class="wrapper"><span class="bar" style="width:100.0%;"></span><span class="val">125</span></div></td><td class="data-coloured dlqx_fraction_bp_trimmed "><div class="wrapper"><span class="bar" style="width:0.031300400000000006%;"></span><span class="val">0.0%</span></div></td><td class="data-coloured svze_fraction_records_with_adapters "><div class="wrapper"><span class="bar" style="width:0.1265%;"></span><span class="val">0.1%</span></div></td><td class="data-coloured wofx_percent_fails_pre hidden"><div class="wrapper"><span class="bar" style="width:100%;"></span><span class="val">200%</span></div></td><td class="data-coloured zmwx_percent_fails_post hidden"><div class="wrapper"><span class="bar" style="width:100.0%;"></span><span class="val">100%</span></div></td></tr></tbody></table></div></div>
     <!-- MultiQC Table Columns Modal -->
     <div class="modal fade" id="general_stats_table_configModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
@@ -5011,10 +5047,10 @@ mqc_config = {}
               </thead>
               <tbody>
                 
-            <tr class="kxvb_input_format" style="background-color: rgba(55,126,184, 0.15);">
+            <tr class="qmcw_input_format" style="background-color: rgba(55,126,184, 0.15);">
               <td class="sorthandle ui-sortable-handle">||</span></td>
               <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="kxvb_input_format" data-target="#general_stats_table">
+                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="qmcw_input_format" data-target="#general_stats_table">
               </td>
               <td>Atropos</td>
               <td>Format</td>
@@ -5022,10 +5058,10 @@ mqc_config = {}
               <td><code>input_format</code></td>
               <td>None</td>
             </tr>
-            <tr class="qzxk_total_record_count" style="background-color: rgba(55,126,184, 0.15);">
+            <tr class="ptga_total_record_count" style="background-color: rgba(55,126,184, 0.15);">
               <td class="sorthandle ui-sortable-handle">||</span></td>
               <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="qzxk_total_record_count" data-target="#general_stats_table">
+                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="ptga_total_record_count" data-target="#general_stats_table">
               </td>
               <td>Atropos</td>
               <td>M Seqs</td>
@@ -5033,10 +5069,10 @@ mqc_config = {}
               <td><code>total_record_count</code></td>
               <td>read_count</td>
             </tr>
-            <tr class="ysjx_mean_sequence_length" style="background-color: rgba(55,126,184, 0.15);">
+            <tr class="wyxd_mean_sequence_length" style="background-color: rgba(55,126,184, 0.15);">
               <td class="sorthandle ui-sortable-handle">||</span></td>
               <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="ysjx_mean_sequence_length" data-target="#general_stats_table">
+                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="wyxd_mean_sequence_length" data-target="#general_stats_table">
               </td>
               <td>Atropos</td>
               <td>Length</td>
@@ -5044,32 +5080,21 @@ mqc_config = {}
               <td><code>mean_sequence_length</code></td>
               <td>None</td>
             </tr>
-            <tr class="ansr_percent_fails_pre text-muted" style="background-color: rgba(55,126,184, 0.15);">
+            <tr class="dlqx_fraction_bp_trimmed" style="background-color: rgba(55,126,184, 0.15);">
               <td class="sorthandle ui-sortable-handle">||</span></td>
               <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  value="ansr_percent_fails_pre" data-target="#general_stats_table">
+                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="dlqx_fraction_bp_trimmed" data-target="#general_stats_table">
               </td>
               <td>Atropos</td>
-              <td>% Failed (pre-trimming)</td>
-              <td>Percentage of Atropos QC modules failed (pre-trimming)</td>
-              <td><code>percent_fails_pre</code></td>
+              <td>% Trimmed</td>
+              <td>% Total Base Pairs trimmed</td>
+              <td><code>fraction_bp_trimmed</code></td>
               <td>None</td>
             </tr>
-            <tr class="fomc_percent_fails_post text-muted" style="background-color: rgba(55,126,184, 0.15);">
+            <tr class="svze_fraction_records_with_adapters" style="background-color: rgba(55,126,184, 0.15);">
               <td class="sorthandle ui-sortable-handle">||</span></td>
               <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  value="fomc_percent_fails_post" data-target="#general_stats_table">
-              </td>
-              <td>Atropos</td>
-              <td>% Failed (post-trimming)</td>
-              <td>Percentage of Atropos QC modules failed (post-trimming)</td>
-              <td><code>percent_fails_post</code></td>
-              <td>None</td>
-            </tr>
-            <tr class="fikp_fraction_records_with_adapters" style="background-color: rgba(77,175,74, 0.15);">
-              <td class="sorthandle ui-sortable-handle">||</span></td>
-              <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="fikp_fraction_records_with_adapters" data-target="#general_stats_table">
+                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="svze_fraction_records_with_adapters" data-target="#general_stats_table">
               </td>
               <td>Atropos</td>
               <td>% Reads w/ Adapters</td>
@@ -5077,15 +5102,26 @@ mqc_config = {}
               <td><code>fraction_records_with_adapters</code></td>
               <td>None</td>
             </tr>
-            <tr class="celx_fraction_bp_trimmed" style="background-color: rgba(77,175,74, 0.15);">
+            <tr class="wofx_percent_fails_pre text-muted" style="background-color: rgba(77,175,74, 0.15);">
               <td class="sorthandle ui-sortable-handle">||</span></td>
               <td style="text-align:center;">
-                <input class="mqc_table_col_visible" type="checkbox"  checked="checked" value="celx_fraction_bp_trimmed" data-target="#general_stats_table">
+                <input class="mqc_table_col_visible" type="checkbox"  value="wofx_percent_fails_pre" data-target="#general_stats_table">
               </td>
-              <td>Atropos</td>
-              <td>% Trimmed</td>
-              <td>% Total Base Pairs trimmed</td>
-              <td><code>fraction_bp_trimmed</code></td>
+              <td>Atropos: Pre-trim QC</td>
+              <td>% Failed (pre-trimming)</td>
+              <td>Percentage of Atropos QC modules failed (pre-trimming)</td>
+              <td><code>percent_fails_pre</code></td>
+              <td>None</td>
+            </tr>
+            <tr class="zmwx_percent_fails_post text-muted" style="background-color: rgba(152,78,163, 0.15);">
+              <td class="sorthandle ui-sortable-handle">||</span></td>
+              <td style="text-align:center;">
+                <input class="mqc_table_col_visible" type="checkbox"  value="zmwx_percent_fails_post" data-target="#general_stats_table">
+              </td>
+              <td>Atropos: Post-trim QC</td>
+              <td>% Failed (post-trimming)</td>
+              <td>Percentage of Atropos QC modules failed (post-trimming)</td>
+              <td><code>percent_fails_post</code></td>
               <td>None</td>
             </tr>
               </tbody>
@@ -5101,8 +5137,268 @@ mqc_config = {}
 
 <div id="mqc-module-section-atropos" class="mqc-module-section">
   <h2 id="atropos">Atropos</h2>
-  <p><a href="https://github.com/jdidion/atropos" target="_blank">Atropos</a> is a general-purpose NGS pre-processing tool thatspecializes in adatper- and quality-trimming.</p><script type="text/javascript">atropos_passfails = {"pre_per_base_N_content": {"test": "pass"}, "pre_base_qualities": {"test": "fail"}, "pre_qualities": {"test": "pass"}, "pre_gc": {"test": "fail"}};</script><script type="text/javascript">atropos_passfails = {"post_qualities": {"test": "pass"}, "post_base_qualities": {"test": "pass"}, "post_per_base_N_content": {"test": "pass"}, "post_gc": {"test": "fail"}};</script>
+  <p><a href="https://github.com/jdidion/atropos" target="_blank">Atropos</a> is a general-purpose NGS pre-processing tool that specializes in adatper- and quality-trimming.</p>
   
+    <div class="mqc-section mqc-section-atropos">
+      <h3 id="atropos_trimmed_length">Trimmed length</h3>
+      
+<p>This plot shows the number of reads with certain lengths of adapter trimmed.
+Obs/Exp shows the raw counts divided by the number expected due to sequencing
+errors. A defined peak may be related to adapter length. See the
+<a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos documentation</a> for more information on
+how these numbers are generated.</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="btn-group hc_switch_group">
+<button class="btn btn-default btn-sm active" data-action="set_data" data-ylab="Count"  data-newdata="0" data-target="atropos_trimmed_length_plot_back_2">Counts</button>
+<button class="btn btn-default btn-sm " data-action="set_data" data-ylab="Observed / Expected"  data-newdata="1" data-target="atropos_trimmed_length_plot_back_2">Obs/Exp</button>
+</div>
+
+<div class="hc-plot-wrapper"><div id="atropos_trimmed_length_plot_back_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_trimmed_length_plot_back_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [[3, 44], [4, 34], [5, 35], [6, 33], [7, 33], [8, 30], [9, 30], [10, 32], [11, 19], [12, 26], [13, 23], [14, 25], [15, 21], [16, 17], [17, 26], [18, 21], [19, 16], [20, 26], [21, 14], [22, 18], [23, 25], [24, 18], [25, 18], [26, 21], [27, 21], [28, 15], [29, 13], [30, 25], [31, 12], [32, 9], [33, 14], [34, 10], [35, 11], [36, 10], [37, 12], [38, 11], [39, 10], [40, 15], [41, 16], [42, 11], [43, 10], [44, 10], [45, 7], [46, 12], [47, 6], [48, 9], [49, 15], [50, 12], [51, 9], [52, 11], [53, 10], [54, 6], [55, 7], [56, 5], [57, 7], [58, 10], [59, 7], [60, 5], [61, 4], [62, 4], [63, 9], [64, 5], [65, 8], [66, 3], [67, 5], [68, 1], [69, 3], [70, 2], [71, 7], [72, 5], [73, 2], [74, 1], [75, 6], [76, 2], [77, 5], [78, 2], [79, 2], [80, 5], [81, 1], [82, 4], [83, 2], [84, 2], [85, 3], [86, 1], [87, 2], [89, 2], [91, 1], [92, 1], [94, 2], [125, 19]], "name": "test"}], [{"data": [[3, 156.25], [4, 39.0625], [5, 9.765625], [6, 2.44140625], [7, 0.6103515625], [8, 0.152587890625], [9, 0.03814697265625], [10, 0.0095367431640625], [11, 0.002384185791015625], [12, 0.0005960464477539062], [13, 0.00014901161193847656], [14, 3.725290298461914e-05], [15, 9.313225746154785e-06], [16, 2.3283064365386963e-06], [17, 5.820766091346741e-07], [18, 1.4551915228366852e-07], [19, 3.637978807091713e-08], [20, 9.094947017729282e-09], [21, 2.2737367544323206e-09], [22, 5.684341886080801e-10], [23, 1.4210854715202004e-10], [24, 3.552713678800501e-11], [25, 8.881784197001252e-12], [26, 2.220446049250313e-12], [27, 5.551115123125783e-13], [28, 1.3877787807814457e-13], [29, 3.469446951953614e-14], [30, 8.673617379884035e-15], [31, 2.168404344971009e-15], [32, 5.421010862427522e-16], [33, 1.3552527156068805e-16], [34, 3.3881317890172014e-17], [35, 8.470329472543003e-18], [36, 2.117582368135751e-18], [37, 5.293955920339377e-19], [38, 1.3234889800848443e-19], [39, 3.308722450212111e-20], [40, 8.271806125530277e-21], [41, 2.067951531382569e-21], [42, 5.169878828456423e-22], [43, 1.2924697071141057e-22], [44, 3.2311742677852644e-23], [45, 8.077935669463161e-24], [46, 2.0194839173657902e-24], [47, 5.048709793414476e-25], [48, 1.262177448353619e-25], [49, 3.155443620884047e-26], [50, 7.888609052210118e-27], [51, 1.9721522630525295e-27], [52, 4.930380657631324e-28], [53, 1.232595164407831e-28], [54, 3.0814879110195774e-29], [55, 7.703719777548943e-30], [56, 1.925929944387236e-30], [57, 4.81482486096809e-31], [58, 1.2037062152420224e-31], [59, 1.2037062152420224e-31], [60, 1.2037062152420224e-31], [61, 1.2037062152420224e-31], [62, 1.2037062152420224e-31], [63, 1.2037062152420224e-31], [64, 1.2037062152420224e-31], [65, 1.2037062152420224e-31], [66, 1.2037062152420224e-31], [67, 1.2037062152420224e-31], [68, 1.2037062152420224e-31], [69, 1.2037062152420224e-31], [70, 1.2037062152420224e-31], [71, 1.2037062152420224e-31], [72, 1.2037062152420224e-31], [73, 1.2037062152420224e-31], [74, 1.2037062152420224e-31], [75, 1.2037062152420224e-31], [76, 1.2037062152420224e-31], [77, 1.2037062152420224e-31], [78, 1.2037062152420224e-31], [79, 1.2037062152420224e-31], [80, 1.2037062152420224e-31], [81, 1.2037062152420224e-31], [82, 1.2037062152420224e-31], [83, 1.2037062152420224e-31], [84, 1.2037062152420224e-31], [85, 1.2037062152420224e-31], [86, 1.2037062152420224e-31], [87, 1.2037062152420224e-31], [89, 1.2037062152420224e-31], [91, 1.2037062152420224e-31], [92, 1.2037062152420224e-31], [94, 1.2037062152420224e-31], [125, 1.2037062152420224e-31]], "name": "test"}]], 
+            "config": {"xlab": "Length Trimmed (bp)", "ylab": "Counts", "ymin": 0, "data_labels": [{"ylab": "Count", "name": "Counts"}, {"ylab": "Observed / Expected", "name": "Obs/Exp"}], "xDecimals": false, "tt_label": "<b>{point.x} bp trimmed</b>: {point.y:.0f}", "id": "atropos_trimmed_length_plot_back_2", "title": "Lengths of Trimmed Sequences\nSide=back, Read=2"} 
+        } 
+    </script></div><div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="btn-group hc_switch_group">
+<button class="btn btn-default btn-sm active" data-action="set_data" data-ylab="Count"  data-newdata="0" data-target="atropos_trimmed_length_plot_back_1">Counts</button>
+<button class="btn btn-default btn-sm " data-action="set_data" data-ylab="Observed / Expected"  data-newdata="1" data-target="atropos_trimmed_length_plot_back_1">Obs/Exp</button>
+</div>
+
+<div class="hc-plot-wrapper"><div id="atropos_trimmed_length_plot_back_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_trimmed_length_plot_back_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [[3, 222], [4, 106], [5, 29], [6, 31], [7, 31], [8, 26], [9, 29], [10, 33], [11, 20], [12, 25], [13, 21], [14, 25], [15, 21], [16, 17], [17, 25], [18, 23], [19, 15], [20, 27], [21, 13], [22, 18], [23, 23], [24, 19], [25, 18], [26, 21], [27, 22], [28, 15], [29, 13], [30, 25], [31, 12], [32, 9], [33, 13], [34, 11], [35, 11], [36, 9], [37, 13], [38, 10], [39, 12], [40, 14], [41, 16], [42, 11], [43, 11], [44, 13], [45, 7], [46, 14], [47, 6], [48, 10], [49, 14], [50, 12], [51, 9], [52, 11], [53, 10], [54, 6], [55, 7], [56, 5], [57, 7], [58, 9], [59, 7], [60, 6], [61, 3], [62, 4], [63, 10], [64, 5], [65, 8], [66, 4], [67, 5], [69, 3], [70, 2], [71, 7], [72, 5], [73, 2], [74, 1], [75, 6], [76, 2], [77, 5], [78, 2], [79, 3], [80, 5], [81, 1], [82, 4], [83, 2], [84, 3], [85, 2], [86, 1], [87, 2], [89, 2], [91, 1], [92, 1], [94, 2], [97, 1], [125, 109]], "name": "test"}], [{"data": [[3, 156.25], [4, 39.0625], [5, 9.765625], [6, 2.44140625], [7, 0.6103515625], [8, 0.152587890625], [9, 0.03814697265625], [10, 0.0095367431640625], [11, 0.002384185791015625], [12, 0.0005960464477539062], [13, 0.00014901161193847656], [14, 3.725290298461914e-05], [15, 9.313225746154785e-06], [16, 2.3283064365386963e-06], [17, 5.820766091346741e-07], [18, 1.4551915228366852e-07], [19, 3.637978807091713e-08], [20, 9.094947017729282e-09], [21, 2.2737367544323206e-09], [22, 5.684341886080801e-10], [23, 1.4210854715202004e-10], [24, 3.552713678800501e-11], [25, 8.881784197001252e-12], [26, 2.220446049250313e-12], [27, 5.551115123125783e-13], [28, 1.3877787807814457e-13], [29, 3.469446951953614e-14], [30, 8.673617379884035e-15], [31, 2.168404344971009e-15], [32, 5.421010862427522e-16], [33, 1.3552527156068805e-16], [34, 3.3881317890172014e-17], [35, 8.470329472543003e-18], [36, 2.117582368135751e-18], [37, 5.293955920339377e-19], [38, 1.3234889800848443e-19], [39, 3.308722450212111e-20], [40, 8.271806125530277e-21], [41, 2.067951531382569e-21], [42, 5.169878828456423e-22], [43, 1.2924697071141057e-22], [44, 3.2311742677852644e-23], [45, 8.077935669463161e-24], [46, 2.0194839173657902e-24], [47, 5.048709793414476e-25], [48, 1.262177448353619e-25], [49, 3.155443620884047e-26], [50, 7.888609052210118e-27], [51, 1.9721522630525295e-27], [52, 4.930380657631324e-28], [53, 1.232595164407831e-28], [54, 3.0814879110195774e-29], [55, 7.703719777548943e-30], [56, 1.925929944387236e-30], [57, 4.81482486096809e-31], [58, 1.2037062152420224e-31], [59, 3.009265538105056e-32], [60, 7.52316384526264e-33], [61, 1.88079096131566e-33], [62, 4.70197740328915e-34], [63, 1.1754943508222875e-34], [64, 2.938735877055719e-35], [65, 2.938735877055719e-35], [66, 2.938735877055719e-35], [67, 2.938735877055719e-35], [69, 2.938735877055719e-35], [70, 2.938735877055719e-35], [71, 2.938735877055719e-35], [72, 2.938735877055719e-35], [73, 2.938735877055719e-35], [74, 2.938735877055719e-35], [75, 2.938735877055719e-35], [76, 2.938735877055719e-35], [77, 2.938735877055719e-35], [78, 2.938735877055719e-35], [79, 2.938735877055719e-35], [80, 2.938735877055719e-35], [81, 2.938735877055719e-35], [82, 2.938735877055719e-35], [83, 2.938735877055719e-35], [84, 2.938735877055719e-35], [85, 2.938735877055719e-35], [86, 2.938735877055719e-35], [87, 2.938735877055719e-35], [89, 2.938735877055719e-35], [91, 2.938735877055719e-35], [92, 2.938735877055719e-35], [94, 2.938735877055719e-35], [97, 2.938735877055719e-35], [125, 2.938735877055719e-35]], "name": "test"}]], 
+            "config": {"xlab": "Length Trimmed (bp)", "ylab": "Counts", "ymin": 0, "data_labels": [{"ylab": "Count", "name": "Counts"}, {"ylab": "Observed / Expected", "name": "Obs/Exp"}], "xDecimals": false, "tt_label": "<b>{point.x} bp trimmed</b>: {point.y:.0f}", "id": "atropos_trimmed_length_plot_back_1", "title": "Lengths of Trimmed Sequences\nSide=back, Read=1"} 
+        } 
+    </script></div>
+      
+    </div>
+
+</div>
+<hr>
+
+<div id="mqc-module-section-atropos-pre" class="mqc-module-section">
+  <h2 id="atropos-pre">Atropos: Pre-trim QC</h2>
+  <p><a href="https://github.com/jdidion/atropos" target="_blank">Atropos: Pre-trim QC</a> is a general-purpose NGS pre-processing tool that specializes in adatper- and quality-trimming.</p><script type="text/javascript">atropos_passfails = {"pre_base_qualities": {"test": "fail"}, "pre_qualities": {"test": "pass"}, "pre_per_base_N_content": {"test": "pass"}, "pre_gc": {"test": "fail"}};</script>
+  
+    <div class="mqc-section mqc-section-atropos-pre">
+      <h3 id="atropos_per_base_sequence_quality_pre">Sequence Quality Histograms</h3>
+      
+<p>The mean quality value across each base position in the read. See the
+<a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos help</a>.
+</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_sequence_quality_plot_pre_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_sequence_quality_plot_pre_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 30.3563], ["10", 35.6979], ["100", 32.2542], ["101", 32.165], ["102", 32.1262], ["103", 32.0569], ["104", 31.9278], ["105", 31.6833], ["106", 31.8379], ["107", 31.8456], ["108", 31.9258], ["109", 31.7012], ["11", 35.7737], ["110", 31.7978], ["111", 31.5851], ["112", 31.2086], ["113", 31.2751], ["114", 31.6657], ["115", 31.1942], ["116", 31.3852], ["117", 31.2412], ["118", 31.1545], ["119", 31.0706], ["12", 35.6894], ["120", 30.8622], ["121", 30.803], ["122", 30.5473], ["123", 30.258], ["124", 29.9123], ["125", 26.3879], ["13", 35.7721], ["14", 35.6719], ["15", 35.5578], ["16", 35.7421], ["17", 35.6447], ["18", 35.5342], ["19", 35.4956], ["2", 32.1199], ["20", 35.5145], ["21", 35.5404], ["22", 35.5311], ["23", 35.5998], ["24", 35.4107], ["25", 35.2498], ["26", 35.3677], ["27", 35.5027], ["28", 35.6128], ["29", 35.528], ["3", 32.1331], ["30", 35.4136], ["31", 35.4971], ["32", 35.5826], ["33", 35.4627], ["34", 35.3504], ["35", 35.4034], ["36", 35.1315], ["37", 35.2141], ["38", 35.1543], ["39", 35.1501], ["4", 32.4455], ["40", 35.2154], ["41", 35.1914], ["42", 35.0558], ["43", 35.0932], ["44", 35.0391], ["45", 35.0134], ["46", 35.0866], ["47", 35.0518], ["48", 34.9295], ["49", 34.9012], ["5", 32.4657], ["50", 34.9154], ["51", 34.5937], ["52", 34.762], ["53", 34.6874], ["54", 34.7556], ["55", 34.6995], ["56", 34.6494], ["57", 34.6788], ["58", 34.6813], ["59", 34.6772], ["6", 35.8995], ["60", 34.5356], ["61", 34.3924], ["62", 34.4456], ["63", 34.5141], ["64", 34.4033], ["65", 34.3851], ["66", 34.2479], ["67", 34.2391], ["68", 34.2202], ["69", 33.9571], ["7", 35.8619], ["70", 33.932], ["71", 33.87], ["72", 33.8629], ["73", 33.7793], ["74", 33.5763], ["75", 33.4652], ["76", 33.4576], ["77", 33.4709], ["78", 33.474], ["79", 33.2146], ["8", 35.8177], ["80", 33.4681], ["81", 33.2119], ["82", 33.3134], ["83", 33.1773], ["84", 33.1001], ["85", 33.2031], ["86", 33.0335], ["87", 33.0234], ["88", 32.9822], ["89", 32.8229], ["9", 35.5673], ["90", 32.7764], ["91", 32.7883], ["92", 32.6779], ["93", 32.6623], ["94", 32.5856], ["95", 32.4673], ["96", 32.4669], ["97", 32.4788], ["98", 32.5208], ["99", 32.4139]], "name": "test", "color": "#5cb85c"}]], 
+            "config": {"xlab": "Position (bp)", "ylab": "Phred Score", "ymin": 0, "xDecimals": false, "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}", "id": "atropos_per_base_sequence_quality_plot_pre_1", "colors": {"test": "#5cb85c"}, "title": "Mean Quality Scores: Read 1", "yPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}]} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_sequence_quality_plot_pre_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_sequence_quality_plot_pre_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 31.765], ["10", 35.5525], ["100", 33.7891], ["101", 33.7408], ["102", 33.7347], ["103", 33.7848], ["104", 33.6668], ["105", 33.6735], ["106", 33.6226], ["107", 33.5351], ["108", 33.47], ["109", 33.4655], ["11", 35.5304], ["110", 33.4606], ["111", 33.342], ["112", 33.3886], ["113", 33.2883], ["114", 33.1386], ["115", 33.1678], ["116", 33.1308], ["117", 32.9353], ["118", 32.8134], ["119", 32.6842], ["12", 35.5135], ["120", 32.7899], ["121", 32.7271], ["122", 32.4149], ["123", 32.1698], ["124", 31.8387], ["125", 29.2977], ["13", 35.5195], ["14", 35.4709], ["15", 35.537], ["16", 35.4524], ["17", 35.4628], ["18", 35.4834], ["19", 35.4799], ["2", 31.8558], ["20", 35.4387], ["21", 35.4496], ["22", 35.4346], ["23", 35.451], ["24", 35.3865], ["25", 35.2973], ["26", 35.3279], ["27", 35.3427], ["28", 35.2707], ["29", 35.3074], ["3", 31.9277], ["30", 35.2819], ["31", 35.3056], ["32", 35.239], ["33", 35.2575], ["34", 35.287], ["35", 35.2037], ["36", 35.1402], ["37", 35.1727], ["38", 35.1794], ["39", 35.1357], ["4", 31.8803], ["40", 35.2068], ["41", 35.2188], ["42", 35.1424], ["43", 35.1362], ["44", 35.1229], ["45", 35.12], ["46", 35.0763], ["47", 35.008], ["48", 35.0612], ["49", 35.0576], ["5", 31.8563], ["50", 35.0537], ["51", 34.9452], ["52", 35.0041], ["53", 35.0204], ["54", 34.9885], ["55", 34.9775], ["56", 34.9212], ["57", 34.8636], ["58", 34.8429], ["59", 34.7931], ["6", 35.5014], ["60", 34.847], ["61", 34.8154], ["62", 34.8348], ["63", 34.7674], ["64", 34.7685], ["65", 34.7733], ["66", 34.6901], ["67", 34.6813], ["68", 34.667], ["69", 34.6295], ["7", 35.4251], ["70", 34.6243], ["71", 34.5214], ["72", 34.5012], ["73", 34.5308], ["74", 34.6138], ["75", 34.5541], ["76", 34.4928], ["77", 34.4708], ["78", 34.3456], ["79", 34.4261], ["8", 35.4998], ["80", 34.4655], ["81", 34.4506], ["82", 34.2974], ["83", 34.3731], ["84", 34.3749], ["85", 34.2616], ["86", 34.2591], ["87", 34.228], ["88", 34.2011], ["89", 34.1515], ["9", 35.4458], ["90", 34.1159], ["91", 34.0959], ["92", 34.1116], ["93", 34.0787], ["94", 34.0414], ["95", 33.8731], ["96", 34.0327], ["97", 33.9331], ["98", 33.9189], ["99", 33.8443]], "name": "test", "color": "#5cb85c"}]], 
+            "config": {"xlab": "Position (bp)", "ylab": "Phred Score", "ymin": 0, "xDecimals": false, "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}", "id": "atropos_per_base_sequence_quality_plot_pre_2", "colors": {"test": "#5cb85c"}, "title": "Mean Quality Scores: Read 2", "yPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}]} 
+        } 
+    </script></div>
+      <hr>
+    </div>
+
+    <div class="mqc-section mqc-section-atropos-pre">
+      <h3 id="atropos_per_sequence_quality_scores_pre">Per Sequence Quality Scores</h3>
+      
+<p>The number of reads with average quality scores. Shows if a subset of reads
+has poor quality. See the <a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos help</a>.</p>
+<p><div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_sequence_quality_scores_plot_pre_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_quality_scores_plot_pre_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["10", 24], ["11", 11], ["12", 14], ["13", 17], ["14", 21], ["15", 26], ["16", 26], ["17", 32], ["18", 37], ["19", 39], ["2", 29], ["20", 80], ["21", 77], ["22", 62], ["23", 48], ["24", 64], ["25", 82], ["26", 86], ["27", 107], ["28", 139], ["29", 149], ["3", 27], ["30", 198], ["31", 241], ["32", 325], ["33", 403], ["34", 573], ["35", 945], ["36", 2938], ["37", 3109], ["4", 15], ["5", 9], ["6", 11], ["7", 11], ["8", 15], ["9", 10]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Mean Sequence Quality (Phred Score)", "ylab": "Count", "ymin": 0, "xDecimals": false, "tt_label": "<b>Phred {point.x}</b>: {point.y} reads", "id": "atropos_per_sequence_quality_scores_plot_pre_1", "colors": {"test": "#d9534f"}, "title": "Per Sequence Quality Scores: Read 1", "xPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}], "xmin": 0} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_sequence_quality_scores_plot_pre_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_quality_scores_plot_pre_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["10", 11], ["11", 14], ["12", 18], ["13", 15], ["14", 14], ["15", 15], ["16", 18], ["17", 22], ["18", 18], ["19", 28], ["2", 176], ["20", 25], ["21", 18], ["22", 21], ["23", 32], ["24", 46], ["25", 52], ["26", 57], ["27", 80], ["28", 88], ["29", 104], ["3", 5], ["30", 106], ["31", 158], ["32", 180], ["33", 240], ["34", 342], ["35", 580], ["36", 1842], ["37", 5618], ["4", 10], ["5", 6], ["6", 6], ["7", 13], ["8", 10], ["9", 12]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Mean Sequence Quality (Phred Score)", "ylab": "Count", "ymin": 0, "xDecimals": false, "tt_label": "<b>Phred {point.x}</b>: {point.y} reads", "id": "atropos_per_sequence_quality_scores_plot_pre_2", "colors": {"test": "#d9534f"}, "title": "Per Sequence Quality Scores: Read 2", "xPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}], "xmin": 0} 
+        } 
+    </script></div></p>
+      <hr>
+    </div>
+
+    <div class="mqc-section mqc-section-atropos-pre">
+      <h3 id="atropos_per_sequence_gc_content_pre">Per Sequence GC Content</h3>
+      
+<p>The average GC content of reads. Normal random library typically have a
+roughly normal distribution of GC content. See the <a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">
+Atropos help</a>.</p>
+<p>The dashed black line shows theoretical GC content: Empirical.</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="btn-group hc_switch_group">
+<button class="btn btn-default btn-sm active" data-action="set_data" data-ylab="Percentage"  data-newdata="0" data-target="atropos_per_sequence_gc_content_plot_pre_1">Percentages</button>
+<button class="btn btn-default btn-sm " data-action="set_data" data-ylab="Count"  data-newdata="1" data-target="atropos_per_sequence_gc_content_plot_pre_1">Counts</button>
+</div>
+
+<div class="hc-plot-wrapper"><div id="atropos_per_sequence_gc_content_plot_pre_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_gc_content_plot_pre_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["0", 0.05], ["1", 0.06], ["10", 3.11], ["11", 2.14], ["12", 2.14], ["13", 2.63], ["14", 6.96], ["15", 3.94], ["16", 4.59], ["17", 4.33], ["18", 8.49], ["19", 4.58], ["2", 0.11], ["20", 4.32], ["21", 3.92], ["22", 7.89], ["23", 3.57], ["24", 3.57], ["25", 3.05], ["26", 5.14], ["27", 2.53], ["28", 2.38], ["29", 1.85], ["3", 0.12], ["30", 3.55], ["31", 1.42], ["32", 1.27], ["33", 1.3], ["34", 1.95], ["35", 0.81], ["36", 0.71], ["37", 0.63], ["38", 1.27], ["39", 0.45], ["4", 0.13], ["40", 0.3], ["41", 0.37], ["42", 0.4], ["43", 0.15], ["44", 0.07], ["45", 0.12], ["46", 0.31], ["47", 0.13], ["48", 0.04], ["49", 0.03], ["5", 0.22], ["50", 0.14], ["51", 0.04], ["52", 0.01], ["54", 0.04], ["55", 0.01], ["57", 0.02], ["58", 0.01], ["6", 0.58], ["68", 0.01], ["7", 0.51], ["8", 0.69], ["9", 0.84]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.0020490651829966904], [1, 0.0027125066811703484], [2, 0.0035434758777346254], [3, 0.00456805964898776], [4, 0.0058113585752153415], [5, 0.007295703938626535], [6, 0.009038583032652961], [7, 0.011050377731411973], [8, 0.013332067896586456], [9, 0.015873091924889164], [10, 0.018649584801759597], [11, 0.021623222896609676], [12, 0.02474088919697475], [13, 0.02793532992866146], [14, 0.03112690406064518], [15, 0.03422643539920058], [16, 0.03713907099030897], [17, 0.03976894065569235], [18, 0.04202431380887144], [19, 0.04382287444189903], [20, 0.04509669466858133], [21, 0.04579648904879466], [22, 0.04589477855079309], [23, 0.04538768105831623], [24, 0.04429516580074244], [25, 0.04265974846331856], [26, 0.04054374583134311], [27, 0.03802533706100099], [28, 0.035193778440552256], [29, 0.03214417919006764], [30, 0.028972262184687424], [31, 0.025769506074492923], [32, 0.022619000166361886], [33, 0.019592250936937665], [34, 0.016747071977779186], [35, 0.014126580892746248], [36, 0.011759229219462259], [37, 0.009659714103086194], [38, 0.00783056882784845], [39, 0.006264205132882999], [40, 0.00494518168825676], [41, 0.0038524956345222187], [42, 0.0029617314676285357], [43, 0.002246946984066079], [44, 0.0016822231021617173], [45, 0.0012428478969893875], [46, 0.0009061414400176361], [47, 0.0006519550055636675], [48, 0.0004628954133018508], [49, 0.00032433345795740485], [50, 0.00022425609158982398], [51, 0.00015301724089449042], [52, 0.00010303389225264136], [53, 6.846418886446943e-05], [54, 4.4894221983201434e-05], [55, 2.905099780847553e-05], [56, 1.8551339745475977e-05], [57, 1.1690501071908915e-05], [58, 7.2700030748158145e-06], [59, 4.461487541090758e-06], [60, 2.7018945546054997e-06], [61, 1.614733030059736e-06], [62, 9.523063573210166e-07], [63, 5.54237949923308e-07], [64, 3.1831672440940235e-07], [65, 1.8041235523925153e-07], [66, 1.0090593633592826e-07], [67, 5.56943037086567e-08], [68, 3.033531173997271e-08], [69, 1.6305336553918924e-08], [70, 8.648776891567532e-09], [71, 4.52713287989085e-09], [72, 2.3384894321663372e-09], [73, 1.1920410263612145e-09], [74, 5.996400274041733e-10], [75, 2.976690280817497e-10], [76, 1.458210781962562e-10], [77, 7.049374483776632e-11], [78, 3.362981520100781e-11], [79, 1.5832226740614527e-11], [80, 7.355346602933769e-12], [81, 3.3721579285675565e-12], [82, 1.5256548375941318e-12], [83, 6.811586822161696e-13], [84, 3.001123892088902e-13], [85, 1.3048577624689755e-13], [86, 5.598685139167634e-14], [87, 2.370568648235248e-14], [88, 9.905186340599755e-15], [89, 4.084288253074298e-15], [90, 1.6619338824026568e-15], [91, 6.67351621839661e-16], [92, 2.6444741127894026e-16], [93, 1.0341119129911408e-16], [94, 3.990610895723064e-17], [95, 1.519689449070713e-17], [96, 5.711023326337726e-18], [97, 2.1179545749403486e-18], [98, 7.751093399013247e-19], [99, 2.799322406490851e-19], [100, 9.976690328949567e-20]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [["0", 5], ["1", 6], ["10", 311], ["11", 214], ["12", 214], ["13", 263], ["14", 696], ["15", 394], ["16", 459], ["17", 433], ["18", 849], ["19", 458], ["2", 11], ["20", 432], ["21", 392], ["22", 789], ["23", 357], ["24", 357], ["25", 305], ["26", 514], ["27", 253], ["28", 238], ["29", 185], ["3", 12], ["30", 355], ["31", 142], ["32", 127], ["33", 130], ["34", 195], ["35", 81], ["36", 71], ["37", 63], ["38", 127], ["39", 45], ["4", 13], ["40", 30], ["41", 37], ["42", 40], ["43", 15], ["44", 7], ["45", 12], ["46", 31], ["47", 13], ["48", 4], ["49", 3], ["5", 22], ["50", 14], ["51", 4], ["52", 1], ["54", 4], ["55", 1], ["57", 2], ["58", 1], ["6", 58], ["68", 1], ["7", 51], ["8", 69], ["9", 84]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.01784735774390117], [1, 0.023625933192993734], [2, 0.030863674895068586], [3, 0.03978779954268339], [4, 0.050616933190125626], [5, 0.06354558130543712], [6, 0.0787260582144073], [7, 0.09624879004059828], [8, 0.11612231137926803], [9, 0.13825463066578464], [10, 0.1624378836233261], [11, 0.1883382714294703], [12, 0.2154931449056501], [13, 0.2433167236786413], [14, 0.27111533436821955], [15, 0.29811225232703703], [16, 0.32348130832559113], [17, 0.34638747311108037], [18, 0.3660317732752703], [19, 0.38169723638894054], [20, 0.3927922105633434], [21, 0.39888741961500146], [22, 0.3997435211774078], [23, 0.39532670201793435], [24, 0.3858108941244667], [25, 0.37156640911550465], [26, 0.3531360261909985], [27, 0.3312006858013186], [28, 0.30653781021721016], [29, 0.2799758007454891], [30, 0.2523484036286275], [31, 0.22445239790883334], [32, 0.19701149144901203], [33, 0.17064850566072706], [34, 0.14586699692645672], [35, 0.12304251957581983], [36, 0.10242288650151628], [37, 0.08413610983788075], [38, 0.06820425449056], [39, 0.054561226707410926], [40, 0.043072532504716377], [41, 0.033555236976688524], [42, 0.025796681083044545], [43, 0.019570908231215548], [44, 0.014652163219828557], [45, 0.010825205182777565], [46, 0.007892491942553611], [47, 0.005678528098459545], [48, 0.00403181904985912], [49, 0.0028249444188089964], [50, 0.001953270557747367], [51, 0.0013327801681910117], [52, 0.0008974252015205063], [53, 0.0005963230850095288], [54, 0.0003910286734736845], [55, 0.00025303419091182185], [56, 0.00016158216918309577], [57, 0.00010182426433632665], [58, 6.332172678164574e-05], [59, 3.88595564829005e-05], [60, 2.3533501570613903e-05], [61, 1.40643246918203e-05], [62, 8.294588372266055e-06], [63, 4.8274125438320125e-06], [64, 2.7725386696058942e-06], [65, 1.571391614133881e-06], [66, 8.788907054859352e-07], [67, 4.850973853023998e-07], [68, 2.6422056525516233e-07], [69, 1.4201948138463384e-07], [70, 7.53308467255532e-08], [71, 3.94313273838493e-08], [72, 2.0368242954168796e-08], [73, 1.0382677339606178e-08], [74, 5.22286463869035e-09], [75, 2.59269723459204e-09], [76, 1.2701015910893915e-09], [77, 6.140005175369447e-10], [78, 2.9291569040077804e-10], [79, 1.3789869491075255e-10], [80, 6.406506891155313e-11], [81, 2.937149555782342e-11], [82, 1.3288453635444889e-11], [83, 5.932892122102838e-12], [84, 2.6139789100094334e-12], [85, 1.1365311111104776e-12], [86, 4.876454756215009e-13], [87, 2.064765292612901e-13], [88, 8.627417302662386e-14], [89, 3.557415068427713e-14], [90, 1.447544411572714e-14], [91, 5.812632626223447e-15], [92, 2.3033369522395696e-15], [93, 9.007114762152835e-16], [94, 3.4758220901747884e-16], [95, 1.323649510140591e-16], [96, 4.974301317240159e-17], [97, 1.8447384347730437e-17], [98, 6.751202350540538e-18], [99, 2.4382098160535312e-18], [100, 8.689697276515073e-19]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], 
+            "config": {"xlab": "%GC", "ylab": "Count", "title": "Per Sequence GC Content: Read 1", "extra_series": [[{"data": [[0, 0.0020490651829966904], [1, 0.0027125066811703484], [2, 0.0035434758777346254], [3, 0.00456805964898776], [4, 0.0058113585752153415], [5, 0.007295703938626535], [6, 0.009038583032652961], [7, 0.011050377731411973], [8, 0.013332067896586456], [9, 0.015873091924889164], [10, 0.018649584801759597], [11, 0.021623222896609676], [12, 0.02474088919697475], [13, 0.02793532992866146], [14, 0.03112690406064518], [15, 0.03422643539920058], [16, 0.03713907099030897], [17, 0.03976894065569235], [18, 0.04202431380887144], [19, 0.04382287444189903], [20, 0.04509669466858133], [21, 0.04579648904879466], [22, 0.04589477855079309], [23, 0.04538768105831623], [24, 0.04429516580074244], [25, 0.04265974846331856], [26, 0.04054374583134311], [27, 0.03802533706100099], [28, 0.035193778440552256], [29, 0.03214417919006764], [30, 0.028972262184687424], [31, 0.025769506074492923], [32, 0.022619000166361886], [33, 0.019592250936937665], [34, 0.016747071977779186], [35, 0.014126580892746248], [36, 0.011759229219462259], [37, 0.009659714103086194], [38, 0.00783056882784845], [39, 0.006264205132882999], [40, 0.00494518168825676], [41, 0.0038524956345222187], [42, 0.0029617314676285357], [43, 0.002246946984066079], [44, 0.0016822231021617173], [45, 0.0012428478969893875], [46, 0.0009061414400176361], [47, 0.0006519550055636675], [48, 0.0004628954133018508], [49, 0.00032433345795740485], [50, 0.00022425609158982398], [51, 0.00015301724089449042], [52, 0.00010303389225264136], [53, 6.846418886446943e-05], [54, 4.4894221983201434e-05], [55, 2.905099780847553e-05], [56, 1.8551339745475977e-05], [57, 1.1690501071908915e-05], [58, 7.2700030748158145e-06], [59, 4.461487541090758e-06], [60, 2.7018945546054997e-06], [61, 1.614733030059736e-06], [62, 9.523063573210166e-07], [63, 5.54237949923308e-07], [64, 3.1831672440940235e-07], [65, 1.8041235523925153e-07], [66, 1.0090593633592826e-07], [67, 5.56943037086567e-08], [68, 3.033531173997271e-08], [69, 1.6305336553918924e-08], [70, 8.648776891567532e-09], [71, 4.52713287989085e-09], [72, 2.3384894321663372e-09], [73, 1.1920410263612145e-09], [74, 5.996400274041733e-10], [75, 2.976690280817497e-10], [76, 1.458210781962562e-10], [77, 7.049374483776632e-11], [78, 3.362981520100781e-11], [79, 1.5832226740614527e-11], [80, 7.355346602933769e-12], [81, 3.3721579285675565e-12], [82, 1.5256548375941318e-12], [83, 6.811586822161696e-13], [84, 3.001123892088902e-13], [85, 1.3048577624689755e-13], [86, 5.598685139167634e-14], [87, 2.370568648235248e-14], [88, 9.905186340599755e-15], [89, 4.084288253074298e-15], [90, 1.6619338824026568e-15], [91, 6.67351621839661e-16], [92, 2.6444741127894026e-16], [93, 1.0341119129911408e-16], [94, 3.990610895723064e-17], [95, 1.519689449070713e-17], [96, 5.711023326337726e-18], [97, 2.1179545749403486e-18], [98, 7.751093399013247e-19], [99, 2.799322406490851e-19], [100, 9.976690328949567e-20]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [[0, 0.01784735774390117], [1, 0.023625933192993734], [2, 0.030863674895068586], [3, 0.03978779954268339], [4, 0.050616933190125626], [5, 0.06354558130543712], [6, 0.0787260582144073], [7, 0.09624879004059828], [8, 0.11612231137926803], [9, 0.13825463066578464], [10, 0.1624378836233261], [11, 0.1883382714294703], [12, 0.2154931449056501], [13, 0.2433167236786413], [14, 0.27111533436821955], [15, 0.29811225232703703], [16, 0.32348130832559113], [17, 0.34638747311108037], [18, 0.3660317732752703], [19, 0.38169723638894054], [20, 0.3927922105633434], [21, 0.39888741961500146], [22, 0.3997435211774078], [23, 0.39532670201793435], [24, 0.3858108941244667], [25, 0.37156640911550465], [26, 0.3531360261909985], [27, 0.3312006858013186], [28, 0.30653781021721016], [29, 0.2799758007454891], [30, 0.2523484036286275], [31, 0.22445239790883334], [32, 0.19701149144901203], [33, 0.17064850566072706], [34, 0.14586699692645672], [35, 0.12304251957581983], [36, 0.10242288650151628], [37, 0.08413610983788075], [38, 0.06820425449056], [39, 0.054561226707410926], [40, 0.043072532504716377], [41, 0.033555236976688524], [42, 0.025796681083044545], [43, 0.019570908231215548], [44, 0.014652163219828557], [45, 0.010825205182777565], [46, 0.007892491942553611], [47, 0.005678528098459545], [48, 0.00403181904985912], [49, 0.0028249444188089964], [50, 0.001953270557747367], [51, 0.0013327801681910117], [52, 0.0008974252015205063], [53, 0.0005963230850095288], [54, 0.0003910286734736845], [55, 0.00025303419091182185], [56, 0.00016158216918309577], [57, 0.00010182426433632665], [58, 6.332172678164574e-05], [59, 3.88595564829005e-05], [60, 2.3533501570613903e-05], [61, 1.40643246918203e-05], [62, 8.294588372266055e-06], [63, 4.8274125438320125e-06], [64, 2.7725386696058942e-06], [65, 1.571391614133881e-06], [66, 8.788907054859352e-07], [67, 4.850973853023998e-07], [68, 2.6422056525516233e-07], [69, 1.4201948138463384e-07], [70, 7.53308467255532e-08], [71, 3.94313273838493e-08], [72, 2.0368242954168796e-08], [73, 1.0382677339606178e-08], [74, 5.22286463869035e-09], [75, 2.59269723459204e-09], [76, 1.2701015910893915e-09], [77, 6.140005175369447e-10], [78, 2.9291569040077804e-10], [79, 1.3789869491075255e-10], [80, 6.406506891155313e-11], [81, 2.937149555782342e-11], [82, 1.3288453635444889e-11], [83, 5.932892122102838e-12], [84, 2.6139789100094334e-12], [85, 1.1365311111104776e-12], [86, 4.876454756215009e-13], [87, 2.064765292612901e-13], [88, 8.627417302662386e-14], [89, 3.557415068427713e-14], [90, 1.447544411572714e-14], [91, 5.812632626223447e-15], [92, 2.3033369522395696e-15], [93, 9.007114762152835e-16], [94, 3.4758220901747884e-16], [95, 1.323649510140591e-16], [96, 4.974301317240159e-17], [97, 1.8447384347730437e-17], [98, 6.751202350540538e-18], [99, 2.4382098160535312e-18], [100, 8.689697276515073e-19]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], "xmax": 100, "ymin": 0, "data_labels": [{"ylab": "Percentage", "name": "Percentages"}, {"ylab": "Count", "name": "Counts"}], "yDecimals": false, "id": "atropos_per_sequence_gc_content_plot_pre_1", "tt_label": "<b>{point.x}% GC</b>: {point.y}", "colors": {"test": "#5cb85c"}, "xmin": 0} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="btn-group hc_switch_group">
+<button class="btn btn-default btn-sm active" data-action="set_data" data-ylab="Percentage"  data-newdata="0" data-target="atropos_per_sequence_gc_content_plot_pre_2">Percentages</button>
+<button class="btn btn-default btn-sm " data-action="set_data" data-ylab="Count"  data-newdata="1" data-target="atropos_per_sequence_gc_content_plot_pre_2">Counts</button>
+</div>
+
+<div class="hc-plot-wrapper"><div id="atropos_per_sequence_gc_content_plot_pre_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_gc_content_plot_pre_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["0", 0.1], ["1", 0.04], ["10", 2.8], ["11", 1.75], ["12", 2.3], ["13", 2.67], ["14", 6.7], ["15", 3.95], ["16", 4.3], ["17", 3.71], ["18", 8.71], ["19", 4.22], ["2", 0.09], ["20", 4.31], ["21", 4.53], ["22", 8.03], ["23", 3.33], ["24", 3.58], ["25", 3.14], ["26", 5.85], ["27", 2.38], ["28", 2.33], ["29", 1.96], ["3", 0.06], ["30", 3.54], ["31", 1.42], ["32", 1.58], ["33", 1.28], ["34", 2.18], ["35", 0.85], ["36", 0.68], ["37", 0.68], ["38", 1.05], ["39", 0.34], ["4", 0.11], ["40", 0.44], ["41", 0.21], ["42", 0.39], ["43", 0.11], ["44", 0.11], ["45", 0.15], ["46", 0.16], ["47", 0.07], ["48", 0.05], ["49", 0.06], ["5", 0.15], ["50", 0.1], ["51", 0.03], ["52", 0.02], ["53", 0.04], ["54", 0.05], ["55", 0.02], ["56", 0.01], ["57", 0.04], ["58", 0.06], ["59", 0.02], ["6", 0.48], ["60", 0.06], ["61", 0.04], ["62", 0.02], ["63", 0.03], ["64", 0.02], ["66", 0.05], ["67", 0.06], ["68", 0.01], ["69", 0.02], ["7", 0.47], ["70", 0.01], ["71", 0.04], ["72", 0.01], ["73", 0.01], ["74", 0.02], ["75", 0.03], ["76", 0.03], ["78", 0.07], ["79", 0.03], ["8", 0.6], ["82", 0.03], ["83", 0.02], ["84", 0.01], ["86", 0.02], ["89", 0.04], ["9", 0.71], ["90", 0.07], ["91", 0.02], ["92", 0.01], ["93", 0.04], ["94", 0.04], ["95", 0.01], ["97", 0.01], ["98", 0.01], ["99", 0.01]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.0020490651829966904], [1, 0.0027125066811703484], [2, 0.0035434758777346254], [3, 0.00456805964898776], [4, 0.0058113585752153415], [5, 0.007295703938626535], [6, 0.009038583032652961], [7, 0.011050377731411973], [8, 0.013332067896586456], [9, 0.015873091924889164], [10, 0.018649584801759597], [11, 0.021623222896609676], [12, 0.02474088919697475], [13, 0.02793532992866146], [14, 0.03112690406064518], [15, 0.03422643539920058], [16, 0.03713907099030897], [17, 0.03976894065569235], [18, 0.04202431380887144], [19, 0.04382287444189903], [20, 0.04509669466858133], [21, 0.04579648904879466], [22, 0.04589477855079309], [23, 0.04538768105831623], [24, 0.04429516580074244], [25, 0.04265974846331856], [26, 0.04054374583134311], [27, 0.03802533706100099], [28, 0.035193778440552256], [29, 0.03214417919006764], [30, 0.028972262184687424], [31, 0.025769506074492923], [32, 0.022619000166361886], [33, 0.019592250936937665], [34, 0.016747071977779186], [35, 0.014126580892746248], [36, 0.011759229219462259], [37, 0.009659714103086194], [38, 0.00783056882784845], [39, 0.006264205132882999], [40, 0.00494518168825676], [41, 0.0038524956345222187], [42, 0.0029617314676285357], [43, 0.002246946984066079], [44, 0.0016822231021617173], [45, 0.0012428478969893875], [46, 0.0009061414400176361], [47, 0.0006519550055636675], [48, 0.0004628954133018508], [49, 0.00032433345795740485], [50, 0.00022425609158982398], [51, 0.00015301724089449042], [52, 0.00010303389225264136], [53, 6.846418886446943e-05], [54, 4.4894221983201434e-05], [55, 2.905099780847553e-05], [56, 1.8551339745475977e-05], [57, 1.1690501071908915e-05], [58, 7.2700030748158145e-06], [59, 4.461487541090758e-06], [60, 2.7018945546054997e-06], [61, 1.614733030059736e-06], [62, 9.523063573210166e-07], [63, 5.54237949923308e-07], [64, 3.1831672440940235e-07], [65, 1.8041235523925153e-07], [66, 1.0090593633592826e-07], [67, 5.56943037086567e-08], [68, 3.033531173997271e-08], [69, 1.6305336553918924e-08], [70, 8.648776891567532e-09], [71, 4.52713287989085e-09], [72, 2.3384894321663372e-09], [73, 1.1920410263612145e-09], [74, 5.996400274041733e-10], [75, 2.976690280817497e-10], [76, 1.458210781962562e-10], [77, 7.049374483776632e-11], [78, 3.362981520100781e-11], [79, 1.5832226740614527e-11], [80, 7.355346602933769e-12], [81, 3.3721579285675565e-12], [82, 1.5256548375941318e-12], [83, 6.811586822161696e-13], [84, 3.001123892088902e-13], [85, 1.3048577624689755e-13], [86, 5.598685139167634e-14], [87, 2.370568648235248e-14], [88, 9.905186340599755e-15], [89, 4.084288253074298e-15], [90, 1.6619338824026568e-15], [91, 6.67351621839661e-16], [92, 2.6444741127894026e-16], [93, 1.0341119129911408e-16], [94, 3.990610895723064e-17], [95, 1.519689449070713e-17], [96, 5.711023326337726e-18], [97, 2.1179545749403486e-18], [98, 7.751093399013247e-19], [99, 2.799322406490851e-19], [100, 9.976690328949567e-20]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [["0", 10], ["1", 4], ["10", 280], ["11", 175], ["12", 230], ["13", 267], ["14", 670], ["15", 395], ["16", 430], ["17", 371], ["18", 871], ["19", 422], ["2", 9], ["20", 431], ["21", 453], ["22", 803], ["23", 333], ["24", 358], ["25", 314], ["26", 585], ["27", 238], ["28", 233], ["29", 196], ["3", 6], ["30", 354], ["31", 142], ["32", 158], ["33", 128], ["34", 218], ["35", 85], ["36", 68], ["37", 68], ["38", 105], ["39", 34], ["4", 11], ["40", 44], ["41", 21], ["42", 39], ["43", 11], ["44", 11], ["45", 15], ["46", 16], ["47", 7], ["48", 5], ["49", 6], ["5", 15], ["50", 10], ["51", 3], ["52", 2], ["53", 4], ["54", 5], ["55", 2], ["56", 1], ["57", 4], ["58", 6], ["59", 2], ["6", 48], ["60", 6], ["61", 4], ["62", 2], ["63", 3], ["64", 2], ["66", 5], ["67", 6], ["68", 1], ["69", 2], ["7", 47], ["70", 1], ["71", 4], ["72", 1], ["73", 1], ["74", 2], ["75", 3], ["76", 3], ["78", 7], ["79", 3], ["8", 60], ["82", 3], ["83", 2], ["84", 1], ["86", 2], ["89", 4], ["9", 71], ["90", 7], ["91", 2], ["92", 1], ["93", 4], ["94", 4], ["95", 1], ["97", 1], ["98", 1], ["99", 1]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.01784735774390117], [1, 0.023625933192993734], [2, 0.030863674895068586], [3, 0.03978779954268339], [4, 0.050616933190125626], [5, 0.06354558130543712], [6, 0.0787260582144073], [7, 0.09624879004059828], [8, 0.11612231137926803], [9, 0.13825463066578464], [10, 0.1624378836233261], [11, 0.1883382714294703], [12, 0.2154931449056501], [13, 0.2433167236786413], [14, 0.27111533436821955], [15, 0.29811225232703703], [16, 0.32348130832559113], [17, 0.34638747311108037], [18, 0.3660317732752703], [19, 0.38169723638894054], [20, 0.3927922105633434], [21, 0.39888741961500146], [22, 0.3997435211774078], [23, 0.39532670201793435], [24, 0.3858108941244667], [25, 0.37156640911550465], [26, 0.3531360261909985], [27, 0.3312006858013186], [28, 0.30653781021721016], [29, 0.2799758007454891], [30, 0.2523484036286275], [31, 0.22445239790883334], [32, 0.19701149144901203], [33, 0.17064850566072706], [34, 0.14586699692645672], [35, 0.12304251957581983], [36, 0.10242288650151628], [37, 0.08413610983788075], [38, 0.06820425449056], [39, 0.054561226707410926], [40, 0.043072532504716377], [41, 0.033555236976688524], [42, 0.025796681083044545], [43, 0.019570908231215548], [44, 0.014652163219828557], [45, 0.010825205182777565], [46, 0.007892491942553611], [47, 0.005678528098459545], [48, 0.00403181904985912], [49, 0.0028249444188089964], [50, 0.001953270557747367], [51, 0.0013327801681910117], [52, 0.0008974252015205063], [53, 0.0005963230850095288], [54, 0.0003910286734736845], [55, 0.00025303419091182185], [56, 0.00016158216918309577], [57, 0.00010182426433632665], [58, 6.332172678164574e-05], [59, 3.88595564829005e-05], [60, 2.3533501570613903e-05], [61, 1.40643246918203e-05], [62, 8.294588372266055e-06], [63, 4.8274125438320125e-06], [64, 2.7725386696058942e-06], [65, 1.571391614133881e-06], [66, 8.788907054859352e-07], [67, 4.850973853023998e-07], [68, 2.6422056525516233e-07], [69, 1.4201948138463384e-07], [70, 7.53308467255532e-08], [71, 3.94313273838493e-08], [72, 2.0368242954168796e-08], [73, 1.0382677339606178e-08], [74, 5.22286463869035e-09], [75, 2.59269723459204e-09], [76, 1.2701015910893915e-09], [77, 6.140005175369447e-10], [78, 2.9291569040077804e-10], [79, 1.3789869491075255e-10], [80, 6.406506891155313e-11], [81, 2.937149555782342e-11], [82, 1.3288453635444889e-11], [83, 5.932892122102838e-12], [84, 2.6139789100094334e-12], [85, 1.1365311111104776e-12], [86, 4.876454756215009e-13], [87, 2.064765292612901e-13], [88, 8.627417302662386e-14], [89, 3.557415068427713e-14], [90, 1.447544411572714e-14], [91, 5.812632626223447e-15], [92, 2.3033369522395696e-15], [93, 9.007114762152835e-16], [94, 3.4758220901747884e-16], [95, 1.323649510140591e-16], [96, 4.974301317240159e-17], [97, 1.8447384347730437e-17], [98, 6.751202350540538e-18], [99, 2.4382098160535312e-18], [100, 8.689697276515073e-19]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], 
+            "config": {"xlab": "%GC", "ylab": "Count", "title": "Per Sequence GC Content: Read 2", "extra_series": [[{"data": [[0, 0.0020490651829966904], [1, 0.0027125066811703484], [2, 0.0035434758777346254], [3, 0.00456805964898776], [4, 0.0058113585752153415], [5, 0.007295703938626535], [6, 0.009038583032652961], [7, 0.011050377731411973], [8, 0.013332067896586456], [9, 0.015873091924889164], [10, 0.018649584801759597], [11, 0.021623222896609676], [12, 0.02474088919697475], [13, 0.02793532992866146], [14, 0.03112690406064518], [15, 0.03422643539920058], [16, 0.03713907099030897], [17, 0.03976894065569235], [18, 0.04202431380887144], [19, 0.04382287444189903], [20, 0.04509669466858133], [21, 0.04579648904879466], [22, 0.04589477855079309], [23, 0.04538768105831623], [24, 0.04429516580074244], [25, 0.04265974846331856], [26, 0.04054374583134311], [27, 0.03802533706100099], [28, 0.035193778440552256], [29, 0.03214417919006764], [30, 0.028972262184687424], [31, 0.025769506074492923], [32, 0.022619000166361886], [33, 0.019592250936937665], [34, 0.016747071977779186], [35, 0.014126580892746248], [36, 0.011759229219462259], [37, 0.009659714103086194], [38, 0.00783056882784845], [39, 0.006264205132882999], [40, 0.00494518168825676], [41, 0.0038524956345222187], [42, 0.0029617314676285357], [43, 0.002246946984066079], [44, 0.0016822231021617173], [45, 0.0012428478969893875], [46, 0.0009061414400176361], [47, 0.0006519550055636675], [48, 0.0004628954133018508], [49, 0.00032433345795740485], [50, 0.00022425609158982398], [51, 0.00015301724089449042], [52, 0.00010303389225264136], [53, 6.846418886446943e-05], [54, 4.4894221983201434e-05], [55, 2.905099780847553e-05], [56, 1.8551339745475977e-05], [57, 1.1690501071908915e-05], [58, 7.2700030748158145e-06], [59, 4.461487541090758e-06], [60, 2.7018945546054997e-06], [61, 1.614733030059736e-06], [62, 9.523063573210166e-07], [63, 5.54237949923308e-07], [64, 3.1831672440940235e-07], [65, 1.8041235523925153e-07], [66, 1.0090593633592826e-07], [67, 5.56943037086567e-08], [68, 3.033531173997271e-08], [69, 1.6305336553918924e-08], [70, 8.648776891567532e-09], [71, 4.52713287989085e-09], [72, 2.3384894321663372e-09], [73, 1.1920410263612145e-09], [74, 5.996400274041733e-10], [75, 2.976690280817497e-10], [76, 1.458210781962562e-10], [77, 7.049374483776632e-11], [78, 3.362981520100781e-11], [79, 1.5832226740614527e-11], [80, 7.355346602933769e-12], [81, 3.3721579285675565e-12], [82, 1.5256548375941318e-12], [83, 6.811586822161696e-13], [84, 3.001123892088902e-13], [85, 1.3048577624689755e-13], [86, 5.598685139167634e-14], [87, 2.370568648235248e-14], [88, 9.905186340599755e-15], [89, 4.084288253074298e-15], [90, 1.6619338824026568e-15], [91, 6.67351621839661e-16], [92, 2.6444741127894026e-16], [93, 1.0341119129911408e-16], [94, 3.990610895723064e-17], [95, 1.519689449070713e-17], [96, 5.711023326337726e-18], [97, 2.1179545749403486e-18], [98, 7.751093399013247e-19], [99, 2.799322406490851e-19], [100, 9.976690328949567e-20]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [[0, 0.01784735774390117], [1, 0.023625933192993734], [2, 0.030863674895068586], [3, 0.03978779954268339], [4, 0.050616933190125626], [5, 0.06354558130543712], [6, 0.0787260582144073], [7, 0.09624879004059828], [8, 0.11612231137926803], [9, 0.13825463066578464], [10, 0.1624378836233261], [11, 0.1883382714294703], [12, 0.2154931449056501], [13, 0.2433167236786413], [14, 0.27111533436821955], [15, 0.29811225232703703], [16, 0.32348130832559113], [17, 0.34638747311108037], [18, 0.3660317732752703], [19, 0.38169723638894054], [20, 0.3927922105633434], [21, 0.39888741961500146], [22, 0.3997435211774078], [23, 0.39532670201793435], [24, 0.3858108941244667], [25, 0.37156640911550465], [26, 0.3531360261909985], [27, 0.3312006858013186], [28, 0.30653781021721016], [29, 0.2799758007454891], [30, 0.2523484036286275], [31, 0.22445239790883334], [32, 0.19701149144901203], [33, 0.17064850566072706], [34, 0.14586699692645672], [35, 0.12304251957581983], [36, 0.10242288650151628], [37, 0.08413610983788075], [38, 0.06820425449056], [39, 0.054561226707410926], [40, 0.043072532504716377], [41, 0.033555236976688524], [42, 0.025796681083044545], [43, 0.019570908231215548], [44, 0.014652163219828557], [45, 0.010825205182777565], [46, 0.007892491942553611], [47, 0.005678528098459545], [48, 0.00403181904985912], [49, 0.0028249444188089964], [50, 0.001953270557747367], [51, 0.0013327801681910117], [52, 0.0008974252015205063], [53, 0.0005963230850095288], [54, 0.0003910286734736845], [55, 0.00025303419091182185], [56, 0.00016158216918309577], [57, 0.00010182426433632665], [58, 6.332172678164574e-05], [59, 3.88595564829005e-05], [60, 2.3533501570613903e-05], [61, 1.40643246918203e-05], [62, 8.294588372266055e-06], [63, 4.8274125438320125e-06], [64, 2.7725386696058942e-06], [65, 1.571391614133881e-06], [66, 8.788907054859352e-07], [67, 4.850973853023998e-07], [68, 2.6422056525516233e-07], [69, 1.4201948138463384e-07], [70, 7.53308467255532e-08], [71, 3.94313273838493e-08], [72, 2.0368242954168796e-08], [73, 1.0382677339606178e-08], [74, 5.22286463869035e-09], [75, 2.59269723459204e-09], [76, 1.2701015910893915e-09], [77, 6.140005175369447e-10], [78, 2.9291569040077804e-10], [79, 1.3789869491075255e-10], [80, 6.406506891155313e-11], [81, 2.937149555782342e-11], [82, 1.3288453635444889e-11], [83, 5.932892122102838e-12], [84, 2.6139789100094334e-12], [85, 1.1365311111104776e-12], [86, 4.876454756215009e-13], [87, 2.064765292612901e-13], [88, 8.627417302662386e-14], [89, 3.557415068427713e-14], [90, 1.447544411572714e-14], [91, 5.812632626223447e-15], [92, 2.3033369522395696e-15], [93, 9.007114762152835e-16], [94, 3.4758220901747884e-16], [95, 1.323649510140591e-16], [96, 4.974301317240159e-17], [97, 1.8447384347730437e-17], [98, 6.751202350540538e-18], [99, 2.4382098160535312e-18], [100, 8.689697276515073e-19]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], "xmax": 100, "ymin": 0, "data_labels": [{"ylab": "Percentage", "name": "Percentages"}, {"ylab": "Count", "name": "Counts"}], "yDecimals": false, "id": "atropos_per_sequence_gc_content_plot_pre_2", "tt_label": "<b>{point.x}% GC</b>: {point.y}", "colors": {"test": "#5cb85c"}, "xmin": 0} 
+        } 
+    </script></div>
+      <hr>
+    </div>
+
+    <div class="mqc-section mqc-section-atropos-pre">
+      <h3 id="atropos_per_base_n_content_pre">Per Base N Content</h3>
+      
+<p>The percentage of base calls at each position for which an N was called.
+See the <a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos help</a>.</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_n_content_plot_pre_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_n_content_plot_pre_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 0.0704], ["10", 0.0003], ["100", 0.0], ["101", 0.0], ["102", 0.0], ["103", 0.0], ["104", 0.0], ["105", 0.0], ["106", 0.0], ["107", 0.0], ["108", 0.0], ["109", 0.0], ["11", 0.0004], ["110", 0.0], ["111", 0.0], ["112", 0.0], ["113", 0.0], ["114", 0.0], ["115", 0.0], ["116", 0.0], ["117", 0.0], ["118", 0.0], ["119", 0.0], ["12", 0.0003], ["120", 0.0], ["121", 0.0], ["122", 0.0], ["123", 0.0], ["124", 0.0], ["125", 0.0], ["13", 0.0003], ["14", 0.0003], ["15", 0.0007], ["16", 0.0003], ["17", 0.0003], ["18", 0.0003], ["19", 0.0], ["2", 0.0], ["20", 0.0002], ["21", 0.0003], ["22", 0.0002], ["23", 0.0002], ["24", 0.0], ["25", 0.0], ["26", 0.0002], ["27", 0.0], ["28", 0.0002], ["29", 0.0002], ["3", 0.0], ["30", 0.0003], ["31", 0.0001], ["32", 0.0003], ["33", 0.0], ["34", 0.0003], ["35", 0.0002], ["36", 0.0003], ["37", 0.0003], ["38", 0.0003], ["39", 0.0], ["4", 0.0009], ["40", 0.0003], ["41", 0.0003], ["42", 0.0003], ["43", 0.0], ["44", 0.0], ["45", 0.0], ["46", 0.0], ["47", 0.0], ["48", 0.0], ["49", 0.0], ["5", 0.0], ["50", 0.0], ["51", 0.0069], ["52", 0.0], ["53", 0.0], ["54", 0.0], ["55", 0.0], ["56", 0.0], ["57", 0.0], ["58", 0.0], ["59", 0.0], ["6", 0.0002], ["60", 0.0], ["61", 0.0], ["62", 0.0], ["63", 0.0], ["64", 0.0], ["65", 0.0], ["66", 0.0], ["67", 0.0], ["68", 0.0], ["69", 0.0], ["7", 0.0], ["70", 0.0], ["71", 0.0], ["72", 0.0], ["73", 0.0], ["74", 0.0], ["75", 0.0], ["76", 0.0], ["77", 0.0], ["78", 0.0], ["79", 0.0], ["8", 0.0003], ["80", 0.0], ["81", 0.0], ["82", 0.0], ["83", 0.0], ["84", 0.0], ["85", 0.0], ["86", 0.0], ["87", 0.0], ["88", 0.0], ["89", 0.0007], ["9", 0.0004], ["90", 0.0], ["91", 0.0], ["92", 0.0], ["93", 0.0], ["94", 0.0], ["95", 0.0], ["96", 0.0], ["97", 0.0], ["98", 0.0], ["99", 0.0]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Position in Read (bp)", "ylab": "Percentage N-Count", "yMinRange": 5, "title": "Per Base N Content: Read 1", "yCeiling": 100, "xDecimals": false, "colors": {"test": "#d9534f"}, "ymin": 0, "id": "atropos_per_base_n_content_plot_pre_1", "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}%", "xmin": 0, "yPlotBands": [{"from": 20, "color": "#e6c3c3", "to": 100}, {"from": 5, "color": "#e6dcc3", "to": 20}, {"from": 0, "color": "#c3e6c3", "to": 5}]} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_n_content_plot_pre_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_n_content_plot_pre_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 0.0], ["10", 0.0], ["100", 0.0], ["101", 0.0], ["102", 0.0], ["103", 0.0], ["104", 0.0], ["105", 0.0], ["106", 0.0], ["107", 0.0], ["108", 0.0], ["109", 0.0], ["11", 0.0], ["110", 0.0], ["111", 0.0], ["112", 0.0], ["113", 0.0], ["114", 0.0], ["115", 0.0], ["116", 0.0], ["117", 0.0], ["118", 0.0], ["119", 0.0], ["12", 0.0], ["120", 0.0], ["121", 0.0], ["122", 0.0], ["123", 0.0], ["124", 0.0], ["125", 0.0], ["13", 0.0], ["14", 0.0], ["15", 0.0], ["16", 0.0], ["17", 0.0], ["18", 0.0], ["19", 0.0], ["2", 0.0], ["20", 0.0], ["21", 0.0], ["22", 0.0], ["23", 0.0], ["24", 0.0], ["25", 0.0], ["26", 0.0], ["27", 0.0], ["28", 0.0], ["29", 0.0], ["3", 0.0], ["30", 0.0], ["31", 0.0], ["32", 0.0], ["33", 0.0], ["34", 0.0], ["35", 0.0], ["36", 0.0], ["37", 0.0], ["38", 0.0], ["39", 0.0], ["4", 0.0], ["40", 0.0], ["41", 0.0], ["42", 0.0], ["43", 0.0], ["44", 0.0], ["45", 0.0], ["46", 0.0], ["47", 0.0], ["48", 0.0], ["49", 0.0], ["5", 0.0], ["50", 0.0], ["51", 0.0], ["52", 0.0], ["53", 0.0], ["54", 0.0], ["55", 0.0], ["56", 0.0], ["57", 0.0], ["58", 0.0], ["59", 0.0], ["6", 0.0], ["60", 0.0], ["61", 0.0], ["62", 0.0], ["63", 0.0], ["64", 0.0], ["65", 0.0], ["66", 0.0], ["67", 0.0], ["68", 0.0], ["69", 0.0], ["7", 0.0], ["70", 0.0], ["71", 0.0], ["72", 0.0], ["73", 0.0], ["74", 0.0], ["75", 0.0], ["76", 0.0], ["77", 0.0], ["78", 0.0], ["79", 0.0], ["8", 0.0], ["80", 0.0], ["81", 0.0], ["82", 0.0], ["83", 0.0], ["84", 0.0], ["85", 0.0], ["86", 0.0], ["87", 0.0], ["88", 0.0], ["89", 0.0], ["9", 0.0], ["90", 0.0], ["91", 0.0], ["92", 0.0], ["93", 0.0], ["94", 0.0], ["95", 0.0], ["96", 0.0], ["97", 0.0], ["98", 0.0], ["99", 0.0]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Position in Read (bp)", "ylab": "Percentage N-Count", "yMinRange": 5, "title": "Per Base N Content: Read 2", "yCeiling": 100, "xDecimals": false, "colors": {"test": "#d9534f"}, "ymin": 0, "id": "atropos_per_base_n_content_plot_pre_2", "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}%", "xmin": 0, "yPlotBands": [{"from": 20, "color": "#e6c3c3", "to": 100}, {"from": 5, "color": "#e6dcc3", "to": 20}, {"from": 0, "color": "#c3e6c3", "to": 5}]} 
+        } 
+    </script></div>
+      
+    </div>
+
+</div>
+<hr>
+
+<div id="mqc-module-section-atropos-post" class="mqc-module-section">
+  <h2 id="atropos-post">Atropos: Post-trim QC</h2>
+  <p><a href="https://github.com/jdidion/atropos" target="_blank">Atropos: Post-trim QC</a> is a general-purpose NGS pre-processing tool that specializes in adatper- and quality-trimming.</p><script type="text/javascript">atropos_passfails = {"post_per_base_N_content": {"test": "pass"}, "post_base_qualities": {"test": "pass"}, "post_qualities": {"test": "pass"}, "post_gc": {"test": "fail"}};</script>
+  
+    <div class="mqc-section mqc-section-atropos-post">
+      <h3 id="atropos_per_base_sequence_quality_post">Sequence Quality Histograms</h3>
+      
+<p>The mean quality value across each base position in the read. See the
+<a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos help</a>.
+</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_sequence_quality_plot_post_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_sequence_quality_plot_post_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 30.35244161358811], ["10", 35.69790718835305], ["100", 32.543895163008735], ["101", 32.46285226302306], ["102", 32.42400256711948], ["103", 32.35556508685396], ["104", 32.23463687150838], ["105", 31.994298009682627], ["106", 32.1431808372896], ["107", 32.15000540365287], ["108", 32.23109425785482], ["109", 32.01140684410647], ["11", 35.76968961682338], ["110", 32.096321288637355], ["111", 31.882622450092725], ["112", 31.481076350907898], ["113", 31.583269378357635], ["114", 31.983509234828496], ["115", 31.512891141472014], ["116", 31.714807033064247], ["117", 31.5745506989128], ["118", 31.523253226524254], ["119", 31.43775817796137], ["12", 35.69184106763725], ["120", 31.185637463589515], ["121", 31.14881420703608], ["122", 30.852576498691842], ["123", 30.583031859026725], ["124", 30.23853425137122], ["125", 26.942233632862646], ["13", 35.76443231220301], ["14", 35.66616115660702], ["15", 35.547366292589224], ["16", 35.738853503184714], ["17", 35.6351228389445], ["18", 35.52633707410777], ["19", 35.483975331109086], ["2", 32.12273784248307], ["20", 35.504195733495095], ["21", 35.529774542513394], ["22", 35.523101809726015], ["23", 35.59175007582651], ["24", 35.40461025174401], ["25", 35.2362754018805], ["26", 35.35254271560004], ["27", 35.48741279951471], ["28", 35.60125366494793], ["29", 35.51627906976744], ["3", 32.13881306237994], ["30", 35.403842264914054], ["31", 35.48786653185035], ["32", 35.57777103559871], ["33", 35.45044498381877], ["34", 35.3361990492566], ["35", 35.39449726886506], ["36", 35.17084766336233], ["37", 35.27053824362606], ["38", 35.16329421286928], ["39", 35.15938069216758], ["4", 32.452633707410776], ["40", 35.21961339945349], ["41", 35.21085130073894], ["42", 35.06875253138923], ["43", 35.08010937816488], ["44", 35.0289766970618], ["45", 35.0030398216638], ["46", 35.07927818329278], ["47", 35.04269343879931], ["48", 34.919667309057715], ["49", 34.88481834787903], ["5", 32.479526842584164], ["50", 34.899309784815266], ["51", 34.5820637822466], ["52", 34.747689182326056], ["53", 34.67723255105151], ["54", 34.74049603577963], ["55", 34.69606347268844], ["56", 34.63302472275918], ["57", 34.66608996539792], ["58", 34.673010380622834], ["59", 34.68119336116485], ["6", 35.91669194216965], ["60", 34.52184985229704], ["61", 34.382709756346216], ["62", 34.4343125254998], ["63", 34.509291402899734], ["64", 34.39959141981614], ["65", 34.38459180545622], ["66", 34.27308046212044], ["67", 34.255780642520975], ["68", 34.2563236047107], ["69", 34.1346587415454], ["7", 35.871701546860784], ["70", 34.14405823849072], ["71", 34.09316642725221], ["72", 34.114681724845994], ["73", 34.04429599177801], ["74", 33.90431114312172], ["75", 33.79763130792997], ["76", 33.779439059599916], ["77", 33.797914085088806], ["78", 33.801426504031426], ["79", 33.53992552751345], ["8", 35.82064503083611], ["80", 33.80412264346385], ["81", 33.54939359386338], ["82", 33.66036952460038], ["83", 33.510131975475424], ["84", 33.42831876820641], ["85", 33.51917465610671], ["86", 33.362032978501354], ["87", 33.34733542319749], ["88", 33.29989539748954], ["89", 33.13114067246256], ["9", 35.56475583864119], ["90", 33.08565737051793], ["91", 33.116406003988665], ["92", 32.99085750315258], ["93", 32.97106176996738], ["94", 32.883610701495684], ["95", 32.773149124657245], ["96", 32.77487575341017], ["97", 32.77827191867853], ["98", 32.815568989288366], ["99", 32.685234399914954]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Position (bp)", "ylab": "Phred Score", "ymin": 0, "xDecimals": false, "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}", "id": "atropos_per_base_sequence_quality_plot_post_1", "colors": {"test": "#d9534f"}, "title": "Mean Quality Scores: Read 1", "yPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}]} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_sequence_quality_plot_post_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_sequence_quality_plot_post_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 31.767558360885683], ["10", 35.56286945195872], ["100", 33.883816552451236], ["101", 33.82676666314566], ["102", 33.84125304265002], ["103", 33.865768251273344], ["104", 33.73389325962152], ["105", 33.74744463373084], ["106", 33.725176169122356], ["107", 33.63903743315508], ["108", 33.58162718404974], ["109", 33.56067935074707], ["11", 35.5380222422603], ["110", 33.583889726469955], ["111", 33.463464651915814], ["112", 33.531277056277055], ["113", 33.449278507106435], ["114", 33.29224241105429], ["115", 33.338312254688184], ["116", 33.2992341356674], ["117", 33.11350164654226], ["118", 33.01299559471366], ["119", 32.90306178843816], ["12", 35.52599939885783], ["120", 33.002995340581315], ["121", 32.96324757768126], ["122", 32.67434320849637], ["123", 32.420851589709024], ["124", 32.12886192562633], ["125", 29.922143579373103], ["13", 35.52670073138964], ["14", 35.49053201082056], ["15", 35.54293156998297], ["16", 35.45927261797415], ["17", 35.482917543332334], ["18", 35.49484019637311], ["19", 35.49634305179842], ["2", 31.857228734595733], ["20", 35.4549644324216], ["21", 35.45466386133654], ["22", 35.438332832381526], ["23", 35.45566576495341], ["24", 35.416090572086965], ["25", 35.30858631399659], ["26", 35.336639615269014], ["27", 35.35297064422402], ["28", 35.293557759743514], ["29", 35.316401162208194], ["3", 31.9318705540527], ["30", 35.298467087466186], ["31", 35.316200781484824], ["32", 35.246718108026855], ["33", 35.27317366469586], ["34", 35.29715373822409], ["35", 35.22050716648291], ["36", 35.14944372055728], ["37", 35.188972431077694], ["38", 35.19047619047619], ["39", 35.144590394063975], ["4", 31.8856827973149], ["40", 35.21520256718813], ["41", 35.225198114153876], ["42", 35.160529748168955], ["43", 35.15333667837431], ["44", 35.13522738680855], ["45", 35.141666666666666], ["46", 35.10447011551984], ["47", 35.026022304832715], ["48", 35.08200180886343], ["49", 35.07379851196461], ["5", 31.86233844304178], ["50", 35.0689863234111], ["51", 34.973133427248946], ["52", 35.01962362886183], ["53", 35.04136889783593], ["54", 35.00402819738167], ["55", 34.992744129799455], ["56", 34.93397842959379], ["57", 34.876991328896956], ["58", 34.864374306745994], ["59", 34.81335754640839], ["6", 35.499949904819154], ["60", 34.86285195277021], ["61", 34.82890617109383], ["62", 34.841653193209375], ["63", 34.778901587943764], ["64", 34.781341697865024], ["65", 34.78236663629922], ["66", 34.699210046587], ["67", 34.701226309921964], ["68", 34.71106827635183], ["69", 34.68416243654822], ["7", 35.44815148782687], ["70", 34.684814626714065], ["71", 34.57958934742834], ["72", 34.55868592351505], ["73", 34.589289350437795], ["74", 34.68158189786974], ["75", 34.620281575188734], ["76", 34.56149131767109], ["77", 34.54618925831202], ["78", 34.41327053041163], ["79", 34.49549180327869], ["8", 35.502254283137965], ["80", 34.53323758719738], ["81", 34.52263627964275], ["82", 34.37591203370671], ["83", 34.4416212323835], ["84", 34.453450051493306], ["85", 34.32659376934186], ["86", 34.336708337638186], ["87", 34.29775571413796], ["88", 34.278422033547315], ["89", 34.23533070702882], ["9", 35.456968239655346], ["90", 34.20755500207555], ["91", 34.18867532467532], ["92", 34.20218408736349], ["93", 34.15248411623789], ["94", 34.11353211009175], ["95", 33.96398747390397], ["96", 34.112925170068024], ["97", 34.03489834416265], ["98", 33.99737587908051], ["99", 33.915421838838625]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Position (bp)", "ylab": "Phred Score", "ymin": 0, "xDecimals": false, "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}", "id": "atropos_per_base_sequence_quality_plot_post_2", "colors": {"test": "#d9534f"}, "title": "Mean Quality Scores: Read 2", "yPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}]} 
+        } 
+    </script></div>
+      <hr>
+    </div>
+
+    <div class="mqc-section mqc-section-atropos-post">
+      <h3 id="atropos_per_sequence_quality_scores_post">Per Sequence Quality Scores</h3>
+      
+<p>The number of reads with average quality scores. Shows if a subset of reads
+has poor quality. See the <a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos help</a>.</p>
+<p><div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_sequence_quality_scores_plot_post_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_quality_scores_plot_post_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["10", 26], ["11", 10], ["12", 12], ["13", 17], ["14", 20], ["15", 24], ["16", 26], ["17", 31], ["18", 31], ["19", 32], ["2", 29], ["20", 55], ["21", 31], ["22", 39], ["23", 45], ["24", 56], ["25", 76], ["26", 80], ["27", 106], ["28", 131], ["29", 155], ["3", 26], ["30", 183], ["31", 239], ["32", 320], ["33", 393], ["34", 560], ["35", 909], ["36", 2901], ["37", 3259], ["4", 15], ["5", 10], ["6", 11], ["7", 8], ["8", 14], ["9", 11]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Mean Sequence Quality (Phred Score)", "ylab": "Count", "ymin": 0, "xDecimals": false, "tt_label": "<b>Phred {point.x}</b>: {point.y} reads", "id": "atropos_per_sequence_quality_scores_plot_post_1", "colors": {"test": "#d9534f"}, "title": "Per Sequence Quality Scores: Read 1", "xPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}], "xmin": 0} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_sequence_quality_scores_plot_post_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_quality_scores_plot_post_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["10", 10], ["11", 14], ["12", 17], ["13", 14], ["14", 13], ["15", 13], ["16", 17], ["17", 20], ["18", 13], ["19", 21], ["2", 176], ["20", 22], ["21", 16], ["22", 17], ["23", 32], ["24", 41], ["25", 51], ["26", 52], ["27", 75], ["28", 82], ["29", 91], ["3", 5], ["30", 110], ["31", 144], ["32", 177], ["33", 229], ["34", 321], ["35", 538], ["36", 1752], ["37", 5843], ["4", 10], ["5", 5], ["6", 6], ["7", 13], ["8", 9], ["9", 12]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Mean Sequence Quality (Phred Score)", "ylab": "Count", "ymin": 0, "xDecimals": false, "tt_label": "<b>Phred {point.x}</b>: {point.y} reads", "id": "atropos_per_sequence_quality_scores_plot_post_2", "colors": {"test": "#d9534f"}, "title": "Per Sequence Quality Scores: Read 2", "xPlotBands": [{"from": 28, "color": "#c3e6c3", "to": 100}, {"from": 20, "color": "#e6dcc3", "to": 28}, {"from": 0, "color": "#e6c3c3", "to": 20}], "xmin": 0} 
+        } 
+    </script></div></p>
+      <hr>
+    </div>
+
+    <div class="mqc-section mqc-section-atropos-post">
+      <h3 id="atropos_per_sequence_gc_content_post">Per Sequence GC Content</h3>
+      
+<p>The average GC content of reads. Normal random library typically have a
+roughly normal distribution of GC content. See the <a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">
+Atropos help</a>.</p>
+<p>The dashed black line shows theoretical GC content: Empirical.</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="btn-group hc_switch_group">
+<button class="btn btn-default btn-sm active" data-action="set_data" data-ylab="Percentage"  data-newdata="0" data-target="atropos_per_sequence_gc_content_plot_post_1">Percentages</button>
+<button class="btn btn-default btn-sm " data-action="set_data" data-ylab="Count"  data-newdata="1" data-target="atropos_per_sequence_gc_content_plot_post_1">Counts</button>
+</div>
+
+<div class="hc-plot-wrapper"><div id="atropos_per_sequence_gc_content_plot_post_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_gc_content_plot_post_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["0", 0.05055100596501871], ["1", 0.060661207158022444], ["10", 3.265594985340208], ["11", 2.3455666767768677], ["12", 2.5477707006369426], ["13", 2.9825093519361037], ["14", 7.38044687089273], ["15", 4.266504903447578], ["16", 5.21686381558993], ["17", 4.943888383378829], ["18", 8.704883227176222], ["19", 4.923667980992822], ["2", 0.11121221312304115], ["20", 4.812455767869781], ["21", 4.236174299868567], ["22", 7.6332019007178245], ["23", 3.8014356485694067], ["24", 3.6598928318673543], ["25", 3.043170559094126], ["26", 4.610251744009706], ["27", 2.4567788898999092], ["28", 2.305125872004853], ["29", 1.7187342028106358], ["3", 0.12132241431604489], ["30", 2.8106359316550398], ["31", 1.2536649479324637], ["32", 1.011020119300374], ["33", 0.9705793145283591], ["34", 1.4861995753715498], ["35", 0.6268324739662319], ["36", 0.4650692548781721], ["37", 0.48528965726417955], ["38", 0.7582650894752806], ["39", 0.36396724294813465], ["4", 0.1516530178950561], ["40", 0.21231422505307856], ["41", 0.24264482863208978], ["42", 0.18198362147406733], ["43", 0.08088160954402993], ["44", 0.04044080477201496], ["45", 0.060661207158022444], ["46", 0.14154281670205238], ["47", 0.07077140835102619], ["48", 0.04044080477201496], ["5", 0.23253462743908604], ["50", 0.060661207158022444], ["51", 0.01011020119300374], ["54", 0.02022040238600748], ["55", 0.01011020119300374], ["57", 0.01011020119300374], ["58", 0.01011020119300374], ["6", 0.6167222727732282], ["68", 0.01011020119300374], ["7", 0.545950864422202], ["8", 0.8088160954402993], ["9", 1.011020119300374]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.001982148703336201], [1, 0.0026767832070578664], [2, 0.0035616934552305736], [3, 0.004669455600637527], [4, 0.006031736142910163], [5, 0.007676880721338544], [6, 0.009627058777855978], [7, 0.011895119976709561], [8, 0.014481395110681762], [9, 0.017370741284182], [10, 0.020530176069181803], [11, 0.023907456193530744], [12, 0.027430923959010596], [13, 0.031010864733577205], [14, 0.03454249392530226], [15, 0.03791053174028361], [16, 0.04099514575786202], [17, 0.04367886721054872], [18, 0.04585394135768997], [19, 0.0474294784080981], [20, 0.04833774640302742], [21, 0.04853899969368191], [22, 0.048024363542884446], [23, 0.04681648318319952], [24, 0.04496787119932778], [25, 0.042557121259282814], [26, 0.03968336851806301], [27, 0.03645954043892595], [28, 0.03300503694072251], [29, 0.029438496722158897], [30, 0.025871249698056813], [31, 0.022401936356722392], [32, 0.019112613760107082], [33, 0.016066488982020767], [34, 0.01330724799561863], [35, 0.010859801655978118], [36, 0.008732164509642804], [37, 0.006918123290970973], [38, 0.005400339445514693], [39, 0.004153557174704315], [40, 0.003147644670135105], [41, 0.002350269041019237], [42, 0.0017290829666728135], [43, 0.0012533733553209219], [44, 0.0008951822379809322], [45, 0.0006299539850814979], [46, 0.0004367898840461542], [47, 0.00029840265886376375], [48, 0.00020086264544222528], [49, 0.00013321773357899395], [50, 8.705451015773853e-05], [51, 5.605145419346358e-05], [52, 3.55589448395355e-05], [53, 2.2226814209600004e-05], [54, 1.3689007014997001e-05], [55, 8.306786446255242e-06], [56, 4.966615253644284e-06], [57, 2.9258655352231197e-06], [58, 1.6983006715699394e-06], [59, 9.712726782163645e-07], [60, 5.473109486010189e-07], [61, 3.038739509782418e-07], [62, 1.6623374233062e-07], [63, 8.960067147048254e-08], [64, 4.7584961184986725e-08], [65, 2.4899724810166155e-08], [66, 1.283765641483758e-08], [67, 6.521437278805372e-09], [68, 3.264128655917153e-09], [69, 1.6097468631124286e-09], [70, 7.821936385529045e-10], [71, 3.7448751601030073e-10], [72, 1.7665534503322302e-10], [73, 8.210745538308613e-11], [74, 3.7601465913339826e-11], [75, 1.6966541853521954e-11], [76, 7.543072152244327e-12], [77, 3.3042246281627595e-12], [78, 1.4261238362015984e-12], [79, 6.064727422431411e-13], [80, 2.541158223169279e-13], [81, 1.0491038969066764e-13], [82, 4.2674816898262957e-14], [83, 1.710374470046966e-14], [84, 6.7542497790665966e-15], [85, 2.628024453268611e-15], [86, 1.0075069703562368e-15], [87, 3.8056872023210844e-16], [88, 1.416395352285933e-16], [89, 5.194003871903543e-17], [90, 1.876663545819251e-17], [91, 6.680930279928075e-18], [92, 2.3434399761109105e-18], [93, 8.099106345990234e-19], [94, 2.7579522439354585e-19], [95, 9.253430230971684e-20], [96, 3.0590398933257904e-20], [97, 9.964004142963085e-21], [98, 3.1977833063882815e-21], [99, 1.011184806251151e-21], [100, 3.1504922285139987e-22]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [["0", 5], ["1", 6], ["10", 323], ["11", 232], ["12", 252], ["13", 295], ["14", 730], ["15", 422], ["16", 516], ["17", 489], ["18", 861], ["19", 487], ["2", 11], ["20", 476], ["21", 419], ["22", 755], ["23", 376], ["24", 362], ["25", 301], ["26", 456], ["27", 243], ["28", 228], ["29", 170], ["3", 12], ["30", 278], ["31", 124], ["32", 100], ["33", 96], ["34", 147], ["35", 62], ["36", 46], ["37", 48], ["38", 75], ["39", 36], ["4", 15], ["40", 21], ["41", 24], ["42", 18], ["43", 8], ["44", 4], ["45", 6], ["46", 14], ["47", 7], ["48", 4], ["5", 23], ["50", 6], ["51", 1], ["54", 2], ["55", 1], ["57", 1], ["58", 1], ["6", 61], ["68", 1], ["7", 54], ["8", 80], ["9", 100]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.017799695355959086], [1, 0.02403751319937964], [2, 0.03198400722797055], [3, 0.04193171129372499], [4, 0.054164990563333265], [5, 0.06893838887762013], [6, 0.0864509878251467], [7, 0.10681817739085187], [8, 0.1300429280939222], [9, 0.15598925673195435], [10, 0.1843609811012526], [11, 0.21468895661790607], [12, 0.24632969715191516], [13, 0.27847756530752327], [14, 0.31019159544921426], [15, 0.3404365750277468], [16, 0.36813640890560095], [17, 0.3922362275507275], [18, 0.41176839339205595], [19, 0.425916716104721], [20, 0.4340729626991862], [21, 0.43588021724926357], [22, 0.4312587846151023], [23, 0.4204120189851317], [24, 0.4038114833699635], [25, 0.38216294890835967], [26, 0.35635664929220584], [27, 0.327406673141555], [28, 0.29638523172768816], [29, 0.2643577005649869], [30, 0.23232382228855017], [31, 0.2011693884833671], [32, 0.1716312715657616], [33, 0.14427707105854648], [34, 0.11949908700065531], [35, 0.0975210188706835], [36, 0.07841483729659238], [37, 0.062124747152919345], [38, 0.04849504822072195], [39, 0.03729894342884475], [40, 0.028265849137813246], [41, 0.021105415988352746], [42, 0.015527165040721864], [43, 0.011255292730781878], [44, 0.008038736497068771], [45, 0.005656986786031851], [46, 0.003922373158734465], [47, 0.0026796558765965987], [48, 0.001803746556071183], [49, 0.0011962952475393657], [50, 0.000781749501216492], [51, 0.000503342058657303], [52, 0.0003193193246590288], [53, 0.00019959679160220804], [54, 0.00012292728299467308], [55, 7.459494228737207e-05], [56, 4.460020497772567e-05], [57, 2.6274272506303614e-05], [58, 1.5250740030698055e-05], [59, 8.722028650382953e-06], [60, 4.91485231843715e-06], [61, 2.7287880797846114e-06], [62, 1.4927790061289678e-06], [63, 8.046140298049332e-07], [64, 4.2731295144118075e-07], [65, 2.235995287952921e-07], [66, 1.1528215460524148e-07], [67, 5.856250676367224e-08], [68, 2.9311875330136036e-08], [69, 1.4455526830749609e-08], [70, 7.024098874205083e-09], [71, 3.3628978937725006e-09], [72, 1.5863649983983426e-09], [73, 7.373249493401135e-10], [74, 3.3766116390179166e-10], [75, 1.5235954584462714e-10], [76, 6.773678792715405e-11], [77, 2.9671937160901576e-11], [78, 1.2806592049090353e-11], [79, 5.446125225343406e-12], [80, 2.2819600844060127e-12], [81, 9.420952994221955e-13], [82, 3.8321985574640137e-13], [83, 1.5359162741021754e-13], [84, 6.065316301601803e-14], [85, 2.3599659590352127e-14], [86, 9.047412593799008e-15], [87, 3.417507107684334e-15], [88, 1.2719230263527679e-15], [89, 4.6642154769693815e-16], [90, 1.6852438641456873e-16], [91, 5.999475391375411e-17], [92, 2.1044090985475977e-17], [93, 7.27299749869923e-18], [94, 2.476641115054042e-18], [95, 8.309580347412572e-19], [96, 2.7470178242065597e-19], [97, 8.947675720380851e-20], [98, 2.8716094091366767e-20], [99, 9.080439560135336e-21], [100, 2.829142021205571e-21]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], 
+            "config": {"xlab": "%GC", "ylab": "Count", "title": "Per Sequence GC Content: Read 1", "extra_series": [[{"data": [[0, 0.001982148703336201], [1, 0.0026767832070578664], [2, 0.0035616934552305736], [3, 0.004669455600637527], [4, 0.006031736142910163], [5, 0.007676880721338544], [6, 0.009627058777855978], [7, 0.011895119976709561], [8, 0.014481395110681762], [9, 0.017370741284182], [10, 0.020530176069181803], [11, 0.023907456193530744], [12, 0.027430923959010596], [13, 0.031010864733577205], [14, 0.03454249392530226], [15, 0.03791053174028361], [16, 0.04099514575786202], [17, 0.04367886721054872], [18, 0.04585394135768997], [19, 0.0474294784080981], [20, 0.04833774640302742], [21, 0.04853899969368191], [22, 0.048024363542884446], [23, 0.04681648318319952], [24, 0.04496787119932778], [25, 0.042557121259282814], [26, 0.03968336851806301], [27, 0.03645954043892595], [28, 0.03300503694072251], [29, 0.029438496722158897], [30, 0.025871249698056813], [31, 0.022401936356722392], [32, 0.019112613760107082], [33, 0.016066488982020767], [34, 0.01330724799561863], [35, 0.010859801655978118], [36, 0.008732164509642804], [37, 0.006918123290970973], [38, 0.005400339445514693], [39, 0.004153557174704315], [40, 0.003147644670135105], [41, 0.002350269041019237], [42, 0.0017290829666728135], [43, 0.0012533733553209219], [44, 0.0008951822379809322], [45, 0.0006299539850814979], [46, 0.0004367898840461542], [47, 0.00029840265886376375], [48, 0.00020086264544222528], [49, 0.00013321773357899395], [50, 8.705451015773853e-05], [51, 5.605145419346358e-05], [52, 3.55589448395355e-05], [53, 2.2226814209600004e-05], [54, 1.3689007014997001e-05], [55, 8.306786446255242e-06], [56, 4.966615253644284e-06], [57, 2.9258655352231197e-06], [58, 1.6983006715699394e-06], [59, 9.712726782163645e-07], [60, 5.473109486010189e-07], [61, 3.038739509782418e-07], [62, 1.6623374233062e-07], [63, 8.960067147048254e-08], [64, 4.7584961184986725e-08], [65, 2.4899724810166155e-08], [66, 1.283765641483758e-08], [67, 6.521437278805372e-09], [68, 3.264128655917153e-09], [69, 1.6097468631124286e-09], [70, 7.821936385529045e-10], [71, 3.7448751601030073e-10], [72, 1.7665534503322302e-10], [73, 8.210745538308613e-11], [74, 3.7601465913339826e-11], [75, 1.6966541853521954e-11], [76, 7.543072152244327e-12], [77, 3.3042246281627595e-12], [78, 1.4261238362015984e-12], [79, 6.064727422431411e-13], [80, 2.541158223169279e-13], [81, 1.0491038969066764e-13], [82, 4.2674816898262957e-14], [83, 1.710374470046966e-14], [84, 6.7542497790665966e-15], [85, 2.628024453268611e-15], [86, 1.0075069703562368e-15], [87, 3.8056872023210844e-16], [88, 1.416395352285933e-16], [89, 5.194003871903543e-17], [90, 1.876663545819251e-17], [91, 6.680930279928075e-18], [92, 2.3434399761109105e-18], [93, 8.099106345990234e-19], [94, 2.7579522439354585e-19], [95, 9.253430230971684e-20], [96, 3.0590398933257904e-20], [97, 9.964004142963085e-21], [98, 3.1977833063882815e-21], [99, 1.011184806251151e-21], [100, 3.1504922285139987e-22]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [[0, 0.017799695355959086], [1, 0.02403751319937964], [2, 0.03198400722797055], [3, 0.04193171129372499], [4, 0.054164990563333265], [5, 0.06893838887762013], [6, 0.0864509878251467], [7, 0.10681817739085187], [8, 0.1300429280939222], [9, 0.15598925673195435], [10, 0.1843609811012526], [11, 0.21468895661790607], [12, 0.24632969715191516], [13, 0.27847756530752327], [14, 0.31019159544921426], [15, 0.3404365750277468], [16, 0.36813640890560095], [17, 0.3922362275507275], [18, 0.41176839339205595], [19, 0.425916716104721], [20, 0.4340729626991862], [21, 0.43588021724926357], [22, 0.4312587846151023], [23, 0.4204120189851317], [24, 0.4038114833699635], [25, 0.38216294890835967], [26, 0.35635664929220584], [27, 0.327406673141555], [28, 0.29638523172768816], [29, 0.2643577005649869], [30, 0.23232382228855017], [31, 0.2011693884833671], [32, 0.1716312715657616], [33, 0.14427707105854648], [34, 0.11949908700065531], [35, 0.0975210188706835], [36, 0.07841483729659238], [37, 0.062124747152919345], [38, 0.04849504822072195], [39, 0.03729894342884475], [40, 0.028265849137813246], [41, 0.021105415988352746], [42, 0.015527165040721864], [43, 0.011255292730781878], [44, 0.008038736497068771], [45, 0.005656986786031851], [46, 0.003922373158734465], [47, 0.0026796558765965987], [48, 0.001803746556071183], [49, 0.0011962952475393657], [50, 0.000781749501216492], [51, 0.000503342058657303], [52, 0.0003193193246590288], [53, 0.00019959679160220804], [54, 0.00012292728299467308], [55, 7.459494228737207e-05], [56, 4.460020497772567e-05], [57, 2.6274272506303614e-05], [58, 1.5250740030698055e-05], [59, 8.722028650382953e-06], [60, 4.91485231843715e-06], [61, 2.7287880797846114e-06], [62, 1.4927790061289678e-06], [63, 8.046140298049332e-07], [64, 4.2731295144118075e-07], [65, 2.235995287952921e-07], [66, 1.1528215460524148e-07], [67, 5.856250676367224e-08], [68, 2.9311875330136036e-08], [69, 1.4455526830749609e-08], [70, 7.024098874205083e-09], [71, 3.3628978937725006e-09], [72, 1.5863649983983426e-09], [73, 7.373249493401135e-10], [74, 3.3766116390179166e-10], [75, 1.5235954584462714e-10], [76, 6.773678792715405e-11], [77, 2.9671937160901576e-11], [78, 1.2806592049090353e-11], [79, 5.446125225343406e-12], [80, 2.2819600844060127e-12], [81, 9.420952994221955e-13], [82, 3.8321985574640137e-13], [83, 1.5359162741021754e-13], [84, 6.065316301601803e-14], [85, 2.3599659590352127e-14], [86, 9.047412593799008e-15], [87, 3.417507107684334e-15], [88, 1.2719230263527679e-15], [89, 4.6642154769693815e-16], [90, 1.6852438641456873e-16], [91, 5.999475391375411e-17], [92, 2.1044090985475977e-17], [93, 7.27299749869923e-18], [94, 2.476641115054042e-18], [95, 8.309580347412572e-19], [96, 2.7470178242065597e-19], [97, 8.947675720380851e-20], [98, 2.8716094091366767e-20], [99, 9.080439560135336e-21], [100, 2.829142021205571e-21]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], "xmax": 100, "ymin": 0, "data_labels": [{"ylab": "Percentage", "name": "Percentages"}, {"ylab": "Count", "name": "Counts"}], "yDecimals": false, "id": "atropos_per_sequence_gc_content_plot_post_1", "tt_label": "<b>{point.x}% GC</b>: {point.y}", "colors": {"test": "#5cb85c"}, "xmin": 0} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="btn-group hc_switch_group">
+<button class="btn btn-default btn-sm active" data-action="set_data" data-ylab="Percentage"  data-newdata="0" data-target="atropos_per_sequence_gc_content_plot_post_2">Percentages</button>
+<button class="btn btn-default btn-sm " data-action="set_data" data-ylab="Count"  data-newdata="1" data-target="atropos_per_sequence_gc_content_plot_post_2">Counts</button>
+</div>
+
+<div class="hc-plot-wrapper"><div id="atropos_per_sequence_gc_content_plot_post_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_sequence_gc_content_plot_post_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["0", 0.10019036168720569], ["1", 0.040076144674882276], ["10", 2.9355775974351266], ["11", 1.8935978358881875], ["12", 2.745215910229436], ["13", 3.015729886784891], ["14", 7.073439535116722], ["15", 4.22803326320008], ["16", 4.879270614166917], ["17", 4.218014227031359], ["18", 8.997094479511071], ["19", 4.498547239755536], ["2", 0.09017132551848513], ["20", 4.668870854623785], ["21", 4.789099288648432], ["22", 7.7948101392646025], ["23", 3.4465484420398758], ["24", 3.717062418595331], ["25", 3.0357679591223325], ["26", 5.310089169421902], ["27", 2.2943592826370103], ["28", 2.2943592826370103], ["29", 1.7633503656948202], ["3", 0.07013325318104398], ["30", 2.8754633804228034], ["31", 1.2924556657649535], ["32", 1.182246267909027], ["33", 1.0620178338843804], ["34", 1.5729886784891294], ["35", 0.6412183147981164], ["36", 0.6311992786293958], ["37", 0.5209898807734696], ["38", 0.6913134956417193], ["39", 0.27051397655545534], ["4", 0.1302474701933674], ["40", 0.35066626590521993], ["41", 0.15028554253080853], ["42", 0.2905520488928965], ["43", 0.08015228934976455], ["44", 0.08015228934976455], ["45", 0.12022843402464684], ["46", 0.09017132551848513], ["47", 0.05009518084360284], ["48", 0.07013325318104398], ["49", 0.05009518084360284], ["5", 0.17032361486824968], ["50", 0.07013325318104398], ["51", 0.03005710850616171], ["52", 0.020038072337441138], ["53", 0.040076144674882276], ["54", 0.040076144674882276], ["55", 0.020038072337441138], ["56", 0.010019036168720569], ["57", 0.03005710850616171], ["58", 0.05009518084360284], ["59", 0.020038072337441138], ["6", 0.5109708446047491], ["60", 0.06011421701232342], ["61", 0.040076144674882276], ["62", 0.010019036168720569], ["63", 0.010019036168720569], ["64", 0.020038072337441138], ["66", 0.03005710850616171], ["67", 0.05009518084360284], ["68", 0.010019036168720569], ["7", 0.5009518084360285], ["70", 0.010019036168720569], ["71", 0.040076144674882276], ["72", 0.010019036168720569], ["73", 0.010019036168720569], ["74", 0.020038072337441138], ["75", 0.03005710850616171], ["76", 0.03005710850616171], ["78", 0.06011421701232342], ["79", 0.03005710850616171], ["8", 0.7113515679791604], ["80", 0.010019036168720569], ["82", 0.03005710850616171], ["83", 0.020038072337441138], ["84", 0.010019036168720569], ["86", 0.020038072337441138], ["89", 0.040076144674882276], ["9", 0.8516180743412484], ["90", 0.07013325318104398], ["91", 0.020038072337441138], ["92", 0.010019036168720569], ["93", 0.040076144674882276], ["94", 0.040076144674882276], ["95", 0.010019036168720569], ["97", 0.010019036168720569], ["98", 0.010019036168720569], ["99", 0.010019036168720569]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.001982148703336201], [1, 0.0026767832070578664], [2, 0.0035616934552305736], [3, 0.004669455600637527], [4, 0.006031736142910163], [5, 0.007676880721338544], [6, 0.009627058777855978], [7, 0.011895119976709561], [8, 0.014481395110681762], [9, 0.017370741284182], [10, 0.020530176069181803], [11, 0.023907456193530744], [12, 0.027430923959010596], [13, 0.031010864733577205], [14, 0.03454249392530226], [15, 0.03791053174028361], [16, 0.04099514575786202], [17, 0.04367886721054872], [18, 0.04585394135768997], [19, 0.0474294784080981], [20, 0.04833774640302742], [21, 0.04853899969368191], [22, 0.048024363542884446], [23, 0.04681648318319952], [24, 0.04496787119932778], [25, 0.042557121259282814], [26, 0.03968336851806301], [27, 0.03645954043892595], [28, 0.03300503694072251], [29, 0.029438496722158897], [30, 0.025871249698056813], [31, 0.022401936356722392], [32, 0.019112613760107082], [33, 0.016066488982020767], [34, 0.01330724799561863], [35, 0.010859801655978118], [36, 0.008732164509642804], [37, 0.006918123290970973], [38, 0.005400339445514693], [39, 0.004153557174704315], [40, 0.003147644670135105], [41, 0.002350269041019237], [42, 0.0017290829666728135], [43, 0.0012533733553209219], [44, 0.0008951822379809322], [45, 0.0006299539850814979], [46, 0.0004367898840461542], [47, 0.00029840265886376375], [48, 0.00020086264544222528], [49, 0.00013321773357899395], [50, 8.705451015773853e-05], [51, 5.605145419346358e-05], [52, 3.55589448395355e-05], [53, 2.2226814209600004e-05], [54, 1.3689007014997001e-05], [55, 8.306786446255242e-06], [56, 4.966615253644284e-06], [57, 2.9258655352231197e-06], [58, 1.6983006715699394e-06], [59, 9.712726782163645e-07], [60, 5.473109486010189e-07], [61, 3.038739509782418e-07], [62, 1.6623374233062e-07], [63, 8.960067147048254e-08], [64, 4.7584961184986725e-08], [65, 2.4899724810166155e-08], [66, 1.283765641483758e-08], [67, 6.521437278805372e-09], [68, 3.264128655917153e-09], [69, 1.6097468631124286e-09], [70, 7.821936385529045e-10], [71, 3.7448751601030073e-10], [72, 1.7665534503322302e-10], [73, 8.210745538308613e-11], [74, 3.7601465913339826e-11], [75, 1.6966541853521954e-11], [76, 7.543072152244327e-12], [77, 3.3042246281627595e-12], [78, 1.4261238362015984e-12], [79, 6.064727422431411e-13], [80, 2.541158223169279e-13], [81, 1.0491038969066764e-13], [82, 4.2674816898262957e-14], [83, 1.710374470046966e-14], [84, 6.7542497790665966e-15], [85, 2.628024453268611e-15], [86, 1.0075069703562368e-15], [87, 3.8056872023210844e-16], [88, 1.416395352285933e-16], [89, 5.194003871903543e-17], [90, 1.876663545819251e-17], [91, 6.680930279928075e-18], [92, 2.3434399761109105e-18], [93, 8.099106345990234e-19], [94, 2.7579522439354585e-19], [95, 9.253430230971684e-20], [96, 3.0590398933257904e-20], [97, 9.964004142963085e-21], [98, 3.1977833063882815e-21], [99, 1.011184806251151e-21], [100, 3.1504922285139987e-22]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [["0", 10], ["1", 4], ["10", 293], ["11", 189], ["12", 274], ["13", 301], ["14", 706], ["15", 422], ["16", 487], ["17", 421], ["18", 898], ["19", 449], ["2", 9], ["20", 466], ["21", 478], ["22", 778], ["23", 344], ["24", 371], ["25", 303], ["26", 530], ["27", 229], ["28", 229], ["29", 176], ["3", 7], ["30", 287], ["31", 129], ["32", 118], ["33", 106], ["34", 157], ["35", 64], ["36", 63], ["37", 52], ["38", 69], ["39", 27], ["4", 13], ["40", 35], ["41", 15], ["42", 29], ["43", 8], ["44", 8], ["45", 12], ["46", 9], ["47", 5], ["48", 7], ["49", 5], ["5", 17], ["50", 7], ["51", 3], ["52", 2], ["53", 4], ["54", 4], ["55", 2], ["56", 1], ["57", 3], ["58", 5], ["59", 2], ["6", 51], ["60", 6], ["61", 4], ["62", 1], ["63", 1], ["64", 2], ["66", 3], ["67", 5], ["68", 1], ["7", 50], ["70", 1], ["71", 4], ["72", 1], ["73", 1], ["74", 2], ["75", 3], ["76", 3], ["78", 6], ["79", 3], ["8", 71], ["80", 1], ["82", 3], ["83", 2], ["84", 1], ["86", 2], ["89", 4], ["9", 85], ["90", 7], ["91", 2], ["92", 1], ["93", 4], ["94", 4], ["95", 1], ["97", 1], ["98", 1], ["99", 1]], "name": "test", "color": "#5cb85c"}, {"data": [[0, 0.017799695355959086], [1, 0.02403751319937964], [2, 0.03198400722797055], [3, 0.04193171129372499], [4, 0.054164990563333265], [5, 0.06893838887762013], [6, 0.0864509878251467], [7, 0.10681817739085187], [8, 0.1300429280939222], [9, 0.15598925673195435], [10, 0.1843609811012526], [11, 0.21468895661790607], [12, 0.24632969715191516], [13, 0.27847756530752327], [14, 0.31019159544921426], [15, 0.3404365750277468], [16, 0.36813640890560095], [17, 0.3922362275507275], [18, 0.41176839339205595], [19, 0.425916716104721], [20, 0.4340729626991862], [21, 0.43588021724926357], [22, 0.4312587846151023], [23, 0.4204120189851317], [24, 0.4038114833699635], [25, 0.38216294890835967], [26, 0.35635664929220584], [27, 0.327406673141555], [28, 0.29638523172768816], [29, 0.2643577005649869], [30, 0.23232382228855017], [31, 0.2011693884833671], [32, 0.1716312715657616], [33, 0.14427707105854648], [34, 0.11949908700065531], [35, 0.0975210188706835], [36, 0.07841483729659238], [37, 0.062124747152919345], [38, 0.04849504822072195], [39, 0.03729894342884475], [40, 0.028265849137813246], [41, 0.021105415988352746], [42, 0.015527165040721864], [43, 0.011255292730781878], [44, 0.008038736497068771], [45, 0.005656986786031851], [46, 0.003922373158734465], [47, 0.0026796558765965987], [48, 0.001803746556071183], [49, 0.0011962952475393657], [50, 0.000781749501216492], [51, 0.000503342058657303], [52, 0.0003193193246590288], [53, 0.00019959679160220804], [54, 0.00012292728299467308], [55, 7.459494228737207e-05], [56, 4.460020497772567e-05], [57, 2.6274272506303614e-05], [58, 1.5250740030698055e-05], [59, 8.722028650382953e-06], [60, 4.91485231843715e-06], [61, 2.7287880797846114e-06], [62, 1.4927790061289678e-06], [63, 8.046140298049332e-07], [64, 4.2731295144118075e-07], [65, 2.235995287952921e-07], [66, 1.1528215460524148e-07], [67, 5.856250676367224e-08], [68, 2.9311875330136036e-08], [69, 1.4455526830749609e-08], [70, 7.024098874205083e-09], [71, 3.3628978937725006e-09], [72, 1.5863649983983426e-09], [73, 7.373249493401135e-10], [74, 3.3766116390179166e-10], [75, 1.5235954584462714e-10], [76, 6.773678792715405e-11], [77, 2.9671937160901576e-11], [78, 1.2806592049090353e-11], [79, 5.446125225343406e-12], [80, 2.2819600844060127e-12], [81, 9.420952994221955e-13], [82, 3.8321985574640137e-13], [83, 1.5359162741021754e-13], [84, 6.065316301601803e-14], [85, 2.3599659590352127e-14], [86, 9.047412593799008e-15], [87, 3.417507107684334e-15], [88, 1.2719230263527679e-15], [89, 4.6642154769693815e-16], [90, 1.6852438641456873e-16], [91, 5.999475391375411e-17], [92, 2.1044090985475977e-17], [93, 7.27299749869923e-18], [94, 2.476641115054042e-18], [95, 8.309580347412572e-19], [96, 2.7470178242065597e-19], [97, 8.947675720380851e-20], [98, 2.8716094091366767e-20], [99, 9.080439560135336e-21], [100, 2.829142021205571e-21]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], 
+            "config": {"xlab": "%GC", "ylab": "Count", "title": "Per Sequence GC Content: Read 2", "extra_series": [[{"data": [[0, 0.001982148703336201], [1, 0.0026767832070578664], [2, 0.0035616934552305736], [3, 0.004669455600637527], [4, 0.006031736142910163], [5, 0.007676880721338544], [6, 0.009627058777855978], [7, 0.011895119976709561], [8, 0.014481395110681762], [9, 0.017370741284182], [10, 0.020530176069181803], [11, 0.023907456193530744], [12, 0.027430923959010596], [13, 0.031010864733577205], [14, 0.03454249392530226], [15, 0.03791053174028361], [16, 0.04099514575786202], [17, 0.04367886721054872], [18, 0.04585394135768997], [19, 0.0474294784080981], [20, 0.04833774640302742], [21, 0.04853899969368191], [22, 0.048024363542884446], [23, 0.04681648318319952], [24, 0.04496787119932778], [25, 0.042557121259282814], [26, 0.03968336851806301], [27, 0.03645954043892595], [28, 0.03300503694072251], [29, 0.029438496722158897], [30, 0.025871249698056813], [31, 0.022401936356722392], [32, 0.019112613760107082], [33, 0.016066488982020767], [34, 0.01330724799561863], [35, 0.010859801655978118], [36, 0.008732164509642804], [37, 0.006918123290970973], [38, 0.005400339445514693], [39, 0.004153557174704315], [40, 0.003147644670135105], [41, 0.002350269041019237], [42, 0.0017290829666728135], [43, 0.0012533733553209219], [44, 0.0008951822379809322], [45, 0.0006299539850814979], [46, 0.0004367898840461542], [47, 0.00029840265886376375], [48, 0.00020086264544222528], [49, 0.00013321773357899395], [50, 8.705451015773853e-05], [51, 5.605145419346358e-05], [52, 3.55589448395355e-05], [53, 2.2226814209600004e-05], [54, 1.3689007014997001e-05], [55, 8.306786446255242e-06], [56, 4.966615253644284e-06], [57, 2.9258655352231197e-06], [58, 1.6983006715699394e-06], [59, 9.712726782163645e-07], [60, 5.473109486010189e-07], [61, 3.038739509782418e-07], [62, 1.6623374233062e-07], [63, 8.960067147048254e-08], [64, 4.7584961184986725e-08], [65, 2.4899724810166155e-08], [66, 1.283765641483758e-08], [67, 6.521437278805372e-09], [68, 3.264128655917153e-09], [69, 1.6097468631124286e-09], [70, 7.821936385529045e-10], [71, 3.7448751601030073e-10], [72, 1.7665534503322302e-10], [73, 8.210745538308613e-11], [74, 3.7601465913339826e-11], [75, 1.6966541853521954e-11], [76, 7.543072152244327e-12], [77, 3.3042246281627595e-12], [78, 1.4261238362015984e-12], [79, 6.064727422431411e-13], [80, 2.541158223169279e-13], [81, 1.0491038969066764e-13], [82, 4.2674816898262957e-14], [83, 1.710374470046966e-14], [84, 6.7542497790665966e-15], [85, 2.628024453268611e-15], [86, 1.0075069703562368e-15], [87, 3.8056872023210844e-16], [88, 1.416395352285933e-16], [89, 5.194003871903543e-17], [90, 1.876663545819251e-17], [91, 6.680930279928075e-18], [92, 2.3434399761109105e-18], [93, 8.099106345990234e-19], [94, 2.7579522439354585e-19], [95, 9.253430230971684e-20], [96, 3.0590398933257904e-20], [97, 9.964004142963085e-21], [98, 3.1977833063882815e-21], [99, 1.011184806251151e-21], [100, 3.1504922285139987e-22]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}], [{"data": [[0, 0.017799695355959086], [1, 0.02403751319937964], [2, 0.03198400722797055], [3, 0.04193171129372499], [4, 0.054164990563333265], [5, 0.06893838887762013], [6, 0.0864509878251467], [7, 0.10681817739085187], [8, 0.1300429280939222], [9, 0.15598925673195435], [10, 0.1843609811012526], [11, 0.21468895661790607], [12, 0.24632969715191516], [13, 0.27847756530752327], [14, 0.31019159544921426], [15, 0.3404365750277468], [16, 0.36813640890560095], [17, 0.3922362275507275], [18, 0.41176839339205595], [19, 0.425916716104721], [20, 0.4340729626991862], [21, 0.43588021724926357], [22, 0.4312587846151023], [23, 0.4204120189851317], [24, 0.4038114833699635], [25, 0.38216294890835967], [26, 0.35635664929220584], [27, 0.327406673141555], [28, 0.29638523172768816], [29, 0.2643577005649869], [30, 0.23232382228855017], [31, 0.2011693884833671], [32, 0.1716312715657616], [33, 0.14427707105854648], [34, 0.11949908700065531], [35, 0.0975210188706835], [36, 0.07841483729659238], [37, 0.062124747152919345], [38, 0.04849504822072195], [39, 0.03729894342884475], [40, 0.028265849137813246], [41, 0.021105415988352746], [42, 0.015527165040721864], [43, 0.011255292730781878], [44, 0.008038736497068771], [45, 0.005656986786031851], [46, 0.003922373158734465], [47, 0.0026796558765965987], [48, 0.001803746556071183], [49, 0.0011962952475393657], [50, 0.000781749501216492], [51, 0.000503342058657303], [52, 0.0003193193246590288], [53, 0.00019959679160220804], [54, 0.00012292728299467308], [55, 7.459494228737207e-05], [56, 4.460020497772567e-05], [57, 2.6274272506303614e-05], [58, 1.5250740030698055e-05], [59, 8.722028650382953e-06], [60, 4.91485231843715e-06], [61, 2.7287880797846114e-06], [62, 1.4927790061289678e-06], [63, 8.046140298049332e-07], [64, 4.2731295144118075e-07], [65, 2.235995287952921e-07], [66, 1.1528215460524148e-07], [67, 5.856250676367224e-08], [68, 2.9311875330136036e-08], [69, 1.4455526830749609e-08], [70, 7.024098874205083e-09], [71, 3.3628978937725006e-09], [72, 1.5863649983983426e-09], [73, 7.373249493401135e-10], [74, 3.3766116390179166e-10], [75, 1.5235954584462714e-10], [76, 6.773678792715405e-11], [77, 2.9671937160901576e-11], [78, 1.2806592049090353e-11], [79, 5.446125225343406e-12], [80, 2.2819600844060127e-12], [81, 9.420952994221955e-13], [82, 3.8321985574640137e-13], [83, 1.5359162741021754e-13], [84, 6.065316301601803e-14], [85, 2.3599659590352127e-14], [86, 9.047412593799008e-15], [87, 3.417507107684334e-15], [88, 1.2719230263527679e-15], [89, 4.6642154769693815e-16], [90, 1.6852438641456873e-16], [91, 5.999475391375411e-17], [92, 2.1044090985475977e-17], [93, 7.27299749869923e-18], [94, 2.476641115054042e-18], [95, 8.309580347412572e-19], [96, 2.7470178242065597e-19], [97, 8.947675720380851e-20], [98, 2.8716094091366767e-20], [99, 9.080439560135336e-21], [100, 2.829142021205571e-21]], "name": "Theoretical GC Content", "lineWidth": 2, "marker": {"enabled": false}, "showInLegend": false, "dashStyle": "Dash", "color": "#000000", "enableMouseTracking": false}]], "xmax": 100, "ymin": 0, "data_labels": [{"ylab": "Percentage", "name": "Percentages"}, {"ylab": "Count", "name": "Counts"}], "yDecimals": false, "id": "atropos_per_sequence_gc_content_plot_post_2", "tt_label": "<b>{point.x}% GC</b>: {point.y}", "colors": {"test": "#5cb85c"}, "xmin": 0} 
+        } 
+    </script></div>
+      <hr>
+    </div>
+
+    <div class="mqc-section mqc-section-atropos-post">
+      <h3 id="atropos_per_base_n_content_post">Per Base N Content</h3>
+      
+<p>The percentage of base calls at each position for which an N was called.
+See the <a href="http://atropos.readthedocs.org/en/latest/guide.html" target="_blank">Atropos help</a>.</p>
+<div class="pair-plot-wrapper"><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_n_content_plot_post_1" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_n_content_plot_post_1"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 0.07087251036295622], ["10", 0.00030330603579011223], ["100", 0.0], ["101", 0.0], ["102", 0.0], ["103", 0.0], ["104", 0.0], ["105", 0.0], ["106", 0.0], ["107", 0.0], ["108", 0.0], ["109", 0.0], ["11", 0.00040440804772014964], ["110", 0.0], ["111", 0.0], ["112", 0.0], ["113", 0.0], ["114", 0.0], ["115", 0.0], ["116", 0.0], ["117", 0.0], ["118", 0.0], ["119", 0.0], ["12", 0.00030330603579011223], ["120", 0.0], ["121", 0.0], ["122", 0.0], ["123", 0.0], ["124", 0.0], ["125", 0.0], ["13", 0.00030330603579011223], ["14", 0.00030330603579011223], ["15", 0.0007077140835102619], ["16", 0.00030330603579011223], ["17", 0.00030330603579011223], ["18", 0.00030330603579011223], ["19", 0.0], ["2", 0.0], ["20", 0.00020220402386007482], ["21", 0.00030330603579011223], ["22", 0.00020220402386007482], ["23", 0.00020220402386007482], ["24", 0.0], ["25", 0.0], ["26", 0.00020220402386007482], ["27", 0.0], ["28", 0.00020220402386007482], ["29", 0.00020222446916076846], ["3", 0.0], ["30", 0.00030333670374115267], ["31", 0.00010111223458038423], ["32", 0.00030339805825242716], ["33", 0.0], ["34", 0.0003034287448164256], ["35", 0.00020230629172567267], ["36", 0.000303459437588509], ["37", 0.0003035208417644678], ["38", 0.0003035208417644678], ["39", 0.0], ["4", 0.0009099181073703367], ["40", 0.00030361299463617044], ["41", 0.0003036744609778318], ["42", 0.00030376670716889426], ["43", 0.0], ["44", 0.0], ["45", 0.0], ["46", 0.0], ["47", 0.0], ["48", 0.0], ["49", 0.0], ["5", 0.0], ["50", 0.0], ["51", 0.007007921998781231], ["52", 0.0], ["53", 0.0], ["54", 0.0], ["55", 0.0], ["56", 0.0], ["57", 0.0], ["58", 0.0], ["59", 0.0], ["6", 0.00020220402386007482], ["60", 0.0], ["61", 0.0], ["62", 0.0], ["63", 0.0], ["64", 0.0], ["65", 0.0], ["66", 0.0], ["67", 0.0], ["68", 0.0], ["69", 0.0], ["7", 0.0], ["70", 0.0], ["71", 0.0], ["72", 0.0], ["73", 0.0], ["74", 0.0], ["75", 0.0], ["76", 0.0], ["77", 0.0], ["78", 0.0], ["79", 0.0], ["8", 0.00030330603579011223], ["80", 0.0], ["81", 0.0], ["82", 0.0], ["83", 0.0], ["84", 0.0], ["85", 0.0], ["86", 0.0], ["87", 0.0], ["88", 0.0], ["89", 0.0007332146223944694], ["9", 0.00040440804772014964], ["90", 0.0], ["91", 0.0], ["92", 0.0], ["93", 0.0], ["94", 0.0], ["95", 0.0], ["96", 0.0], ["97", 0.0], ["98", 0.0], ["99", 0.0]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Position in Read (bp)", "ylab": "Percentage N-Count", "yMinRange": 5, "title": "Per Base N Content: Read 1", "yCeiling": 100, "xDecimals": false, "colors": {"test": "#d9534f"}, "ymin": 0, "id": "atropos_per_base_n_content_plot_post_1", "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}%", "xmin": 0, "yPlotBands": [{"from": 20, "color": "#e6c3c3", "to": 100}, {"from": 5, "color": "#e6dcc3", "to": 20}, {"from": 0, "color": "#c3e6c3", "to": 5}]} 
+        } 
+    </script><div class="mqc_hcplot_plotgroup"><div class="hc-plot-wrapper"><div id="atropos_per_base_n_content_plot_post_2" class="hc-plot not_rendered hc-line-plot"><small>loading..</small></div></div></div> 
+<script type="text/javascript"> 
+        mqc_plots["atropos_per_base_n_content_plot_post_2"] = { 
+            "plot_type": "xy_line", 
+            "datasets": [[{"data": [["1", 0.0], ["10", 0.0], ["100", 0.0], ["101", 0.0], ["102", 0.0], ["103", 0.0], ["104", 0.0], ["105", 0.0], ["106", 0.0], ["107", 0.0], ["108", 0.0], ["109", 0.0], ["11", 0.0], ["110", 0.0], ["111", 0.0], ["112", 0.0], ["113", 0.0], ["114", 0.0], ["115", 0.0], ["116", 0.0], ["117", 0.0], ["118", 0.0], ["119", 0.0], ["12", 0.0], ["120", 0.0], ["121", 0.0], ["122", 0.0], ["123", 0.0], ["124", 0.0], ["125", 0.0], ["13", 0.0], ["14", 0.0], ["15", 0.0], ["16", 0.0], ["17", 0.0], ["18", 0.0], ["19", 0.0], ["2", 0.0], ["20", 0.0], ["21", 0.0], ["22", 0.0], ["23", 0.0], ["24", 0.0], ["25", 0.0], ["26", 0.0], ["27", 0.0], ["28", 0.0], ["29", 0.0], ["3", 0.0], ["30", 0.0], ["31", 0.0], ["32", 0.0], ["33", 0.0], ["34", 0.0], ["35", 0.0], ["36", 0.0], ["37", 0.0], ["38", 0.0], ["39", 0.0], ["4", 0.0], ["40", 0.0], ["41", 0.0], ["42", 0.0], ["43", 0.0], ["44", 0.0], ["45", 0.0], ["46", 0.0], ["47", 0.0], ["48", 0.0], ["49", 0.0], ["5", 0.0], ["50", 0.0], ["51", 0.0], ["52", 0.0], ["53", 0.0], ["54", 0.0], ["55", 0.0], ["56", 0.0], ["57", 0.0], ["58", 0.0], ["59", 0.0], ["6", 0.0], ["60", 0.0], ["61", 0.0], ["62", 0.0], ["63", 0.0], ["64", 0.0], ["65", 0.0], ["66", 0.0], ["67", 0.0], ["68", 0.0], ["69", 0.0], ["7", 0.0], ["70", 0.0], ["71", 0.0], ["72", 0.0], ["73", 0.0], ["74", 0.0], ["75", 0.0], ["76", 0.0], ["77", 0.0], ["78", 0.0], ["79", 0.0], ["8", 0.0], ["80", 0.0], ["81", 0.0], ["82", 0.0], ["83", 0.0], ["84", 0.0], ["85", 0.0], ["86", 0.0], ["87", 0.0], ["88", 0.0], ["89", 0.0], ["9", 0.0], ["90", 0.0], ["91", 0.0], ["92", 0.0], ["93", 0.0], ["94", 0.0], ["95", 0.0], ["96", 0.0], ["97", 0.0], ["98", 0.0], ["99", 0.0]], "name": "test", "color": "#d9534f"}]], 
+            "config": {"xlab": "Position in Read (bp)", "ylab": "Percentage N-Count", "yMinRange": 5, "title": "Per Base N Content: Read 2", "yCeiling": 100, "xDecimals": false, "colors": {"test": "#d9534f"}, "ymin": 0, "id": "atropos_per_base_n_content_plot_post_2", "tt_label": "<b>Base {point.x}</b>: {point.y:.2f}%", "xmin": 0, "yPlotBands": [{"from": 20, "color": "#e6c3c3", "to": 100}, {"from": 5, "color": "#e6dcc3", "to": 20}, {"from": 0, "color": "#c3e6c3", "to": 5}]} 
+        } 
+    </script></div>
+      
+    </div>
+
 </div>
 
 

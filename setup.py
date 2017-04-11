@@ -22,7 +22,9 @@ setup(
     include_package_data = True,
     entry_points = {
         'multiqc.modules.v1': [
-            'atropos = multiqc_atropos.modules.atropos.atropos:MultiqcModule'
+            'atropos_trim = multiqc_atropos.modules.atropos.atropos:TrimModule',
+            'atropos_pre = multiqc_atropos.modules.atropos.atropos:PreModule',
+            'atropos_post = multiqc_atropos.modules.atropos.atropos:PostModule'
         ]
     },
     classifiers = [

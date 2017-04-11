@@ -1,4 +1,4 @@
-// Javascript for the FastQC MultiQC Mod
+// Javascript for the atropos MultiQC Mod
 
 ///////////////
 // Per Base Sequence Content
@@ -17,16 +17,16 @@ max_bp = 0;
 current_single_plot = undefined;
 
 // Function to plot heatmap
-function fastqc_seq_content_heatmap() {
+function atropos_seq_content_heatmap() {
 
     // Get sample names, rename and skip hidden samples
     sample_names = [];
     sample_statuses = [];
     var p_data = {};
     var hidden_samples = 0;
-    $.each(fastqc_seq_content_data, function(s_name, data){
+    $.each(atropos_seq_content_data, function(s_name, data){
         // rename sample names
-        var t_status = fastqc_passfails['per_base_sequence_content'][s_name];
+        var t_status = atropos_passfails['per_base_sequence_content'][s_name];
         $.each(window.mqc_rename_f_texts, function(idx, f_text){
             if(window.mqc_rename_regex_mode){
                 var re = new RegExp(f_text,'g');
@@ -54,14 +54,14 @@ function fastqc_seq_content_heatmap() {
         else { hidden_samples += 1; }
     });
     num_samples = sample_names.length;
-    $('#fastqc_seq_heatmap_div .samples-hidden-warning, #fastqc_seq_heatmap_div .fastqc-heatmap-no-samples').remove();
-    $('#fastqc_seq_heatmap_div .hc-plot-wrapper').show();
+    $('#atropos_seq_heatmap_div .samples-hidden-warning, #atropos_seq_heatmap_div .atropos-heatmap-no-samples').remove();
+    $('#atropos_seq_heatmap_div .hc-plot-wrapper').show();
     if(num_samples == 0){
-        $('#fastqc_seq_heatmap_div .hc-plot-wrapper').hide();
-        $('#fastqc_seq_heatmap_div').prepend('<p class="fastqc-heatmap-no-samples text-muted">No samples found.</p>');
+        $('#atropos_seq_heatmap_div .hc-plot-wrapper').hide();
+        $('#atropos_seq_heatmap_div').prepend('<p class="atropos-heatmap-no-samples text-muted">No samples found.</p>');
     }
     if(hidden_samples > 0){
-        $('#fastqc_seq_heatmap_div').prepend('<div class="samples-hidden-warning alert alert-warning"> \
+        $('#atropos_seq_heatmap_div').prepend('<div class="samples-hidden-warning alert alert-warning"> \
             <span class="glyphicon glyphicon-info-sign"></span> \
             <strong>Warning:</strong> '+hidden_samples+' samples hidden in toolbox. \
             <a href="#mqc_hidesamples" class="alert-link" onclick="mqc_toolbox_openclose(\'#mqc_hidesamples\', true); return false;">See toolbox.</a>\
@@ -70,21 +70,21 @@ function fastqc_seq_content_heatmap() {
     if(num_samples == 0){ return; }
 
     // Convert the CSS percentage size into pixels
-    c_width = $('#fastqc_seq_heatmap').parent().width() - 5; // -5 for status bar
-    c_height = $('#fastqc_seq_heatmap').parent().height() - 2; // -2 for bottom line padding
+    c_width = $('#atropos_seq_heatmap').parent().width() - 5; // -5 for status bar
+    c_height = $('#atropos_seq_heatmap').parent().height() - 2; // -2 for bottom line padding
     s_height = c_height / num_samples;
     // Minimum row height
     if(s_height < 2){
         s_height = 2;
         c_height = num_samples * 2;
-        $('#fastqc_seq_heatmap').parent().parent().height(c_height+10);
+        $('#atropos_seq_heatmap').parent().parent().height(c_height+10);
     }
     // Resize the canvas properties
-    $('#fastqc_seq_heatmap').prop({
+    $('#atropos_seq_heatmap').prop({
         'width': c_width,
         'height': c_height+1
     });
-    var canvas = document.getElementById('fastqc_seq_heatmap');
+    var canvas = document.getElementById('atropos_seq_heatmap');
     if (canvas && canvas.getContext) {
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = '#666666';
@@ -127,7 +127,7 @@ function fastqc_seq_content_heatmap() {
                 bp = parseInt(bp);
                 var this_width = (bp - last_bp) * (c_width / max_bp);
                 last_bp = bp;
-                // Very old versions of FastQC give counts instead of percentages
+                // Very old versions of atropos give counts instead of percentages
                 if(v['t'] > 100){
                     var t = v['t'] + v['a'] + v['c'] + v['g'];
                     v['t'] = (v['t']/t)*100;
@@ -163,16 +163,16 @@ function fastqc_seq_content_heatmap() {
 // Set up listeners etc on page load
 $(function () {
 
-    // Add the pass / warning / fails counts to each of the FastQC submodule headings
-    $.each(fastqc_passfails, function(k, vals){
-        var pid = '#fastqc_'+k;
+    // Add the pass / warning / fails counts to each of the atropos submodule headings
+    $.each(atropos_passfails, function(k, vals){
+        var pid = '#atropos_'+k;
         var total = 0;
         var v = { 'pass': 0, 'warn': 0, 'fail': 0 };
         $.each(vals, function(s_name, status){
             total += 1;
             v[status] += 1;
         });
-        var p_bar = '<div class="progress fastqc_passfail_progress"> \
+        var p_bar = '<div class="progress atropos_passfail_progress"> \
             <div class="progress-bar progress-bar-success" style="width: '+(v['pass']/total)*100+'%" title="'+v['pass']+'&nbsp;/&nbsp;'+total+' samples passed">'+v['pass']+'</div> \
             <div class="progress-bar progress-bar-warning" style="width: '+(v['warn']/total)*100+'%" title="'+v['warn']+'&nbsp;/&nbsp;'+total+' samples with warnings">'+v['warn']+'</div> \
             <div class="progress-bar progress-bar-danger" style="width: '+(v['fail']/total)*100+'%" title="'+v['fail']+'&nbsp;/&nbsp;'+total+' samples failed">'+v['fail']+'</div> \
@@ -181,13 +181,13 @@ $(function () {
     });
 
     // Create popovers on click
-    $('.mqc-section-fastqc .fastqc_passfail_progress .progress-bar').mouseover(function(){
+    $('.mqc-section-atropos .atropos_passfail_progress .progress-bar').mouseover(function(){
         // Does this element already have a popover?
         if ($(this).attr('data-original-title')) { return false; }
         // Create it
         var pid = $(this).closest('h3').attr('id');
         var k = pid.substr(7);
-        var vals = fastqc_passfails[k];
+        var vals = atropos_passfails[k];
         var passes = $(this).hasClass('progress-bar-success') ? true : false;
         var warns = $(this).hasClass('progress-bar-warning') ? true : false;
         var fails = $(this).hasClass('progress-bar-danger') ? true : false;
@@ -210,10 +210,10 @@ $(function () {
             template: '<div class="popover popover-'+pclass+'" role="tooltip"> \
                 <div class="arrow"></div>\
                 <h3 class="popover-title"></h3>\
-                <div class="fastqc-popover-intro">\
+                <div class="atropos-popover-intro">\
                     Click bar to fix in place <br>\
-                    <a href="#" class="fastqc-status-highlight"><span class="glyphicon glyphicon-pushpin"></span> Highlight these samples</a><br>\
-                    <a href="#" class="fastqc-status-hideothers"><span class="glyphicon glyphicon-eye-close"></span> Show only these samples</a>\
+                    <a href="#" class="atropos-status-highlight"><span class="glyphicon glyphicon-pushpin"></span> Highlight these samples</a><br>\
+                    <a href="#" class="atropos-status-hideothers"><span class="glyphicon glyphicon-eye-close"></span> Show only these samples</a>\
                 </div>\
                 <div class="popover-content"></div>\
             </div>'
@@ -221,7 +221,7 @@ $(function () {
     });
 
     // Listener for Status higlight click
-    $('.mqc-section-fastqc .fastqc_passfail_progress').on('click', '.fastqc-status-highlight', function(e){
+    $('.mqc-section-atropos .atropos_passfail_progress').on('click', '.atropos-status-highlight', function(e){
         e.preventDefault();
         // Get sample names and highlight colour
         var samples = $(this).parent().parent().find('.popover-content').html().split('<br>');
@@ -243,7 +243,7 @@ $(function () {
     });
 
     // Listener for Status hide others click
-    $('.mqc-section-fastqc .fastqc_passfail_progress').on('click', '.fastqc-status-hideothers', function(e){
+    $('.mqc-section-atropos .atropos_passfail_progress').on('click', '.atropos-status-hideothers', function(e){
         e.preventDefault();
         // Get sample names
         var samples = $(this).parent().parent().find('.popover-content').html().split('<br>');
@@ -275,7 +275,7 @@ $(function () {
     /////////
 
     // Seq Content heatmap mouse rollover
-    $('#fastqc_seq_heatmap').mousemove(function(e) {
+    $('#atropos_seq_heatmap').mousemove(function(e) {
 
         // Replace the heading above the heatmap
         var pos = findPos(this);
@@ -290,7 +290,7 @@ $(function () {
         if(s_status == 'pass'){ s_status_class = 'label-success'; }
         if(s_status == 'warn'){ s_status_class = 'label-warning'; }
         if(s_status == 'fail'){ s_status_class = 'label-danger'; }
-        $('#fastqc_per_base_sequence_content_plot .s_name').html(s_name + ' <span class="label s_status '+s_status_class+'">'+s_status+'</span>');
+        $('#atropos_per_base_sequence_content_plot .s_name').html(s_name + ' <span class="label s_status '+s_status_class+'">'+s_status+'</span>');
 
         // Show the sequence base percentages on the bar plots below
         // http://stackoverflow.com/questions/6735470/get-pixel-color-from-canvas-on-mouseover
@@ -300,28 +300,28 @@ $(function () {
         var seq_a = (p[1]/255)*100;
         var seq_c = (p[2]/255)*100;
         var seq_g = 100 - (seq_t + seq_a + seq_c);
-        $('#fastqc_seq_heatmap_key_t span').text(seq_t.toFixed(0)+'%');
-        $('#fastqc_seq_heatmap_key_c span').text(seq_c.toFixed(0)+'%');
-        $('#fastqc_seq_heatmap_key_a span').text(seq_a.toFixed(0)+'%');
-        $('#fastqc_seq_heatmap_key_g span').text(seq_g.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_t span').text(seq_t.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_c span').text(seq_c.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_a span').text(seq_a.toFixed(0)+'%');
+        $('#atropos_seq_heatmap_key_g span').text(seq_g.toFixed(0)+'%');
 
         // Get base pair position from x pos
         var this_bp = Math.floor((x/c_width)*max_bp);
-        $('#fastqc_seq_heatmap_key_pos').text(this_bp+' bp');
+        $('#atropos_seq_heatmap_key_pos').text(this_bp+' bp');
     });
 
     // Remove sample name again when mouse leaves
-    $('#fastqc_seq_heatmap').mouseout(function(e) {
-      $('#fastqc_per_base_sequence_content_plot .s_name').html('<em class="text-muted">rollover for sample name</em>');
-      $('#fastqc_seq_heatmap_key_pos').text('-');
-      $('#fastqc_seq_heatmap_key_t span').text('-');
-      $('#fastqc_seq_heatmap_key_c span').text('-');
-      $('#fastqc_seq_heatmap_key_a span').text('-');
-      $('#fastqc_seq_heatmap_key_g span').text('-');
+    $('#atropos_seq_heatmap').mouseout(function(e) {
+      $('#atropos_per_base_sequence_content_plot .s_name').html('<em class="text-muted">rollover for sample name</em>');
+      $('#atropos_seq_heatmap_key_pos').text('-');
+      $('#atropos_seq_heatmap_key_t span').text('-');
+      $('#atropos_seq_heatmap_key_c span').text('-');
+      $('#atropos_seq_heatmap_key_a span').text('-');
+      $('#atropos_seq_heatmap_key_g span').text('-');
     });
 
     // Click sample
-    $('#fastqc_seq_heatmap').click(function(e) {
+    $('#atropos_seq_heatmap').click(function(e) {
       e.preventDefault();
       // Get label from y position
       var pos = findPos(this);
@@ -333,40 +333,40 @@ $(function () {
         plot_single_seqcontent(s_name);
       }
     });
-    $('#mqc-module-section-fastqc').on('click', '#fastqc_sequence_content_single_prev', function(e){
+    $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_prev', function(e){
         e.preventDefault();
         var idx = sample_names.indexOf(current_single_plot) - 1;
         if(idx < 0){ idx = sample_names.length - 1; }
         plot_single_seqcontent(sample_names[idx]);
     });
-    $('#mqc-module-section-fastqc').on('click', '#fastqc_sequence_content_single_next', function(e){
+    $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_next', function(e){
         e.preventDefault();
         var idx = sample_names.indexOf(current_single_plot) + 1;
         if(idx == sample_names.length){ idx = 0; }
         plot_single_seqcontent(sample_names[idx]);
     });
-    $('#mqc-module-section-fastqc').on('click', '#fastqc_sequence_content_single_back', function(e){
+    $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_back', function(e){
         e.preventDefault();
-        $('#fastqc_per_base_sequence_content_plot').slideDown();
-        $('#fastqc_sequence_content_single_wrapper').slideUp(function(){
+        $('#atropos_per_base_sequence_content_plot').slideDown();
+        $('#atropos_sequence_content_single_wrapper').slideUp(function(){
           $(this).remove();
         });
     });
 
     // Highlight the custom heatmap
     $(document).on('mqc_highlights mqc_hidesamples mqc_renamesamples mqc_plotresize', function(e){
-        fastqc_seq_content_heatmap();
+        atropos_seq_content_heatmap();
     });
     // Seq content - window resized
     $(window).resize(function() {
-        fastqc_seq_content_heatmap();
+        atropos_seq_content_heatmap();
     });
 
 });
 
 function plot_single_seqcontent(s_name){
   current_single_plot = s_name;
-  var data = fastqc_seq_content_data[s_name];
+  var data = atropos_seq_content_data[s_name];
   var plot_data = [
     {'name': '% T', 'data':[]},
     {'name': '% C', 'data':[]},
@@ -383,18 +383,18 @@ function plot_single_seqcontent(s_name){
   }
 
   // Create plot div if it doesn't exist, and hide overview
-  if($('#fastqc_sequence_content_single_wrapper').length == 0) {
-    $('#fastqc_per_base_sequence_content_plot').slideUp();
-    var newplot = '<div id="fastqc_sequence_content_single_wrapper"> \
-    <div id="fastqc_sequence_content_single_controls"><div class="btn-group"> \
-      <button class="btn btn-default btn-sm" id="fastqc_sequence_content_single_prev">&laquo; Prev</button> \
-      <button class="btn btn-default btn-sm" id="fastqc_sequence_content_single_next">Next &raquo;</button> \
-    </div> <button class="btn btn-default btn-sm" id="fastqc_sequence_content_single_back">Back to overview heatmap</button></div>\
-    <div class="hc-plot-wrapper"><div id="fastqc_sequence_content_single" class="hc-plot hc-line-plot"><small>loading..</small></div></div></div>';
-    $(newplot).insertAfter('#fastqc_per_base_sequence_content_plot').hide().slideDown();
+  if($('#atropos_sequence_content_single_wrapper').length == 0) {
+    $('#atropos_per_base_sequence_content_plot').slideUp();
+    var newplot = '<div id="atropos_sequence_content_single_wrapper"> \
+    <div id="atropos_sequence_content_single_controls"><div class="btn-group"> \
+      <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_prev">&laquo; Prev</button> \
+      <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_next">Next &raquo;</button> \
+    </div> <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_back">Back to overview heatmap</button></div>\
+    <div class="hc-plot-wrapper"><div id="atropos_sequence_content_single" class="hc-plot hc-line-plot"><small>loading..</small></div></div></div>';
+    $(newplot).insertAfter('#atropos_per_base_sequence_content_plot').hide().slideDown();
   }
 
-  $('#fastqc_sequence_content_single').highcharts({
+  $('#atropos_sequence_content_single').highcharts({
     chart: {
       type: 'line',
       zoomType: 'x'

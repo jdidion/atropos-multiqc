@@ -1,10 +1,10 @@
-/* CSS for the FastQC MultiQC Module */
+/* CSS for the Atropos MultiQC Module */
 
-/* FastQC statuses popovers */
-.fastqc_passfail_progress .progress-bar {
+/* Atropos statuses popovers */
+.atropos_passfail_progress .progress-bar {
   cursor: pointer;
 }
-.mqc-section-fastqc .popover .popover-content {
+.mqc-section-atropos .popover .popover-content {
   font-size: 11px;
   max-height: 300px;
   white-space: nowrap;
@@ -22,7 +22,7 @@
   background-color: #f2dede;
   color: #a94442;
 }
-.fastqc-popover-intro {
+.atropos-popover-intro {
   margin: 5px 5px 0;
   padding: 3px 5px;
   border: 1px dashed #ccc;
@@ -31,7 +31,7 @@
   color: #999;
   background-color: #fafafa;
 }
-.fastqc-popover-intro a {
+.atropos-popover-intro a {
   color: #999;
   text-decoration: underline;
 }
@@ -54,39 +54,43 @@
   cursor: pointer;
 }
 
-.fastqc_passfail_progress {
+.atropos_passfail_progress {
   width: 100px;
   display: inline-block;
   margin: 0 0 -2px 20px;
 }
 
 
-#fastqc_seq_heatmap {
+#atropos_seq_heatmap {
   cursor: pointer;
 }
-#fastqc_seq_heatmap_div .hc-plot-wrapper {
+#atropos_seq_heatmap_div .hc-plot-wrapper {
   height: 300px;
 }
-#fastqc_seq_heatmap_footer {
+#atropos_seq_heatmap_footer {
   clear:both;
 }
-#fastqc_sequence_content_plot h5 {
+#atropos_sequence_content_plot h5 {
   display: inline-block;
   height: 18px;
 }
-.fastqc_seq_heatmap_key {
+.atropos_seq_heatmap_key {
   font-size: 12px;
 }
-.fastqc_seq_heatmap_key div {
+.atropos_seq_heatmap_key div {
   display: inline-block;
   width: 120px;
   margin: 0 8px;
 }
-.fastqc_seq_heatmap_key > span, .fastqc_seq_heatmap_key div > span {
+.atropos_seq_heatmap_key > span, .atropos_seq_heatmap_key div > span {
   display:inline-block;
   width: 60px;
 }
-#fastqc_seq_heatmap_key_t { border-bottom: 1px solid red; }
-#fastqc_seq_heatmap_key_c { border-bottom: 1px solid blue; }
-#fastqc_seq_heatmap_key_a { border-bottom: 1px solid green; }
-#fastqc_seq_heatmap_key_g { border-bottom: 1px solid black; }
+.mqc-module-section {
+  padding: 10px;
+}
+
+#atropos_seq_heatmap_key_t { border-bottom: 1px solid red; }
+#atropos_seq_heatmap_key_c { border-bottom: 1px solid blue; }
+#atropos_seq_heatmap_key_a { border-bottom: 1px solid green; }
+#atropos_seq_heatmap_key_g { border-bottom: 1px solid black; }

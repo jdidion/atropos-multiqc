@@ -21,6 +21,7 @@ from multiqc.modules.base_module import BaseMultiqcModule
 
 ## Hard-coded URLs
 # TODO: eventually these need pointers to specific sections of the docs
+# TODO: handle multiplexed output
 
 ATROPOS_GITHUB_URL = "https://github.com/jdidion/atropos"
 ATROPOS_DOC_URL = "http://atropos.readthedocs.org/en/latest/guide.html"
@@ -62,9 +63,9 @@ PASSFAILS = '<script type="text/javascript">atropos_passfails = {};</script>'
 # Initialise the logger
 log = logging.getLogger(__name__)
 
-## Module
+## Modules
 
-class MultiqcModule(BaseMultiqcModule):
+class BaseAtroposModule(BaseMultiqcModule):
     """Atropos module class. Loads JSON ouptut for read trimming stats (which
     are equivalent to Cutadapt) and pre- and post-trimming stats (which are
     very similar to FastQC).
@@ -73,48 +74,26 @@ class MultiqcModule(BaseMultiqcModule):
         from_config: Whether to load data from configured locations. This should
             only be set to False in tests.
     """
-    def __init__(self, from_config=True):
+    def __init__(self, name, anchor, from_config=True):
         # Initialise the parent object
         super().__init__(
-            name='Atropos', anchor='atropos',
+            name=name, anchor=anchor,
             href=ATROPOS_GITHUB_URL,
-            info="is a general-purpose NGS pre-processing tool that"\
+            info="is a general-purpose NGS pre-processing tool that "\
                  "specializes in adatper- and quality-trimming.")
-        
+        self.atropos_general_data = OrderedDict()
         # List of sample IDs
         self.atropos_sample_ids = []
-        # Collections of data dicts
-        self.atropos_general_data = OrderedDict()
-        self.atropos_trim_data = OrderedDict()
-        self.atropos_qc_data = dict(pre=OrderedDict(), post=OrderedDict())
-        # Section objects
-        self.trim_sections = [
-            TrimmedLength()
-        ]
-        self.qc_sections = [
-            PerBaseQuality(),
-            #PerTileQuality()
-            PerSequenceQuality(),
-            #PerBaseContent(),
-            PerSequenceGC(),
-            PerBaseN(),
-            #SequenceLength(),
-            #Duplication(),
-            #Contaminants(),
-            #Kmers()
-        ]
         # Sections of the report
-        self.section_html = []
-        # Add to self.css and self.js to be included in template
-        self.css = ATROPOS_CSS
-        self.js = ATROPOS_JS
-        # Colours to be used for plotting lines
-        self.status_colours = ATROPOS_JS
-            
+        self.sections = []
+        self.init_submodule()
         if from_config:
             self.init_from_config()
             self.atropos_report()
     
+    def init_submodule(self):
+        raise NotImplementedError()
+
     def init_from_config(self):
         """Initialize module from JSON files discovered via MultiQC
         configuration.
@@ -165,6 +144,45 @@ class MultiqcModule(BaseMultiqcModule):
         if file_dict:
             self.add_data_source(file_dict, sample_id)
         
+        self.add_submodule_data(sample_id, data)
+    
+    def add_submodule_data(self, sample_id, data):
+        """Add data specific to the sub-module.
+        """
+        raise NotImplementedError()
+    
+    def atropos_report(self):
+        if not self.atropos_sample_ids:
+            log.debug("No reports to process; atropos_report raising UserWarning")
+            raise UserWarning
+        
+        # Add to general stats
+        if self.atropos_general_data:
+            self.atropos_general()
+        
+        self.atropos_plots()
+    
+    def atropos_general(self):
+        raise NotImplementedError()
+    
+    def atropos_plots(self):
+        raise NotImplementedError()
+
+class TrimModule(BaseAtroposModule):
+    def __init__(self, **kwargs):
+        super().__init__(name="Atropos", anchor="atropos", **kwargs)
+    
+    def init_submodule(self):
+        self.atropos_general_data = OrderedDict()
+        self.atropos_trim_data = OrderedDict()
+        self.trim_sections = [
+            TrimmedLength()
+        ]
+        # Add to self.css and self.js to be included in template
+        self.css = ATROPOS_CSS
+        self.js = ATROPOS_JS
+    
+    def add_submodule_data(self, sample_id, data):
         self.atropos_general_data[sample_id] = data['derived'].copy()
         self.atropos_general_data[sample_id]['mean_sequence_length'] = \
             mean(data['derived']['mean_sequence_lengths'])
@@ -183,54 +201,6 @@ class MultiqcModule(BaseMultiqcModule):
                     self.atropos_general_data[sample_id]['fraction_records_with_adapters'] = \
                         mean(mod_dict['fraction_records_with_adapters'])
                     break
-        
-        pairing = data['input']['input_read']
-        input_names = data['input']['input_names']
-
-        def add_stats_data(phase, source, input_names, data):
-            self.atropos_qc_data[phase][sample_id] = OrderedDict()
-            source_files = input_names
-            if pairing == 3:
-                self.atropos_qc_data[phase][sample_id] = [None, None]
-                for idx in range(2):
-                    read = 'read{}'.format(idx+1)
-                    if read in data:
-                        self.atropos_qc_data[phase][sample_id][idx] = data[read]
-                        self.atropos_qc_data[phase][sample_id][idx]['source'] = source_files[idx]
-            else:
-                read = 'read{}'.format(pairing)
-                data[read]['source'] = source_files[pairing-1]
-                self.atropos_qc_data[phase][sample_id] = [data[read], None]
-        
-        if 'pre' in data:
-            for source, pre_data in data['pre'].items():
-                add_stats_data('pre', source, input_names, pre_data)
-        
-        # TODO: handle multiplexed output
-        if 'post' in data and 'NoFilter' in data['post']:
-            for source, post_data in data['post']['NoFilter'].items():
-                add_stats_data('post', source, input_names, post_data)
-    
-    def atropos_report(self):
-        if not self.atropos_sample_ids:
-            log.debug("No reports to process; atropos_report raising UserWarning")
-            raise UserWarning
-        
-        # Add to general stats
-        if self.atropos_general_data:
-            self.atropos_general()
-        
-        # Add pre-trim stats
-        if self.atropos_qc_data['pre']:
-            self.atropos_qc('pre')
-        
-        # Add trimming stats
-        if self.atropos_trim_data:
-            self.atropos_trim()
-        
-        # Add post-trim stats
-        if self.atropos_qc_data['post']:
-            self.atropos_qc('post')
     
     def atropos_general(self):
         """Add some single-number stats to the basic statistics table at the
@@ -265,33 +235,6 @@ class MultiqcModule(BaseMultiqcModule):
             'scale': 'RdYlGn',
             'format': '{:.0f}'
         }
-        headers['percent_fails_pre'] = {
-            'title': '% Failed (pre-trimming)',
-            'description': 'Percentage of Atropos QC modules failed (pre-trimming)',
-            'max': 100,
-            'min': 0,
-            'suffix': '%',
-            'scale': 'Reds',
-            'format': '{:.0f}%',
-            'hidden': True
-        }
-        headers['percent_fails_post'] = {
-            'title': '% Failed (post-trimming)',
-            'description': 'Percentage of Atropos QC modules failed (post-trimming)',
-            'max': 100,
-            'min': 0,
-            'suffix': '%',
-            'scale': 'Reds',
-            'format': '{:.0f}%',
-            'hidden': True
-        }
-        self.general_stats_addcols(self.atropos_general_data, headers)
-    
-    def atropos_trim(self):
-        """ Take the parsed stats from the Atropos report and add it to the
-        basic stats table at the top of the report.
-        """
-        headers = {}
         headers['fraction_bp_trimmed'] = {
             'title': '% Trimmed',
             'description': '% Total Base Pairs trimmed',
@@ -311,35 +254,116 @@ class MultiqcModule(BaseMultiqcModule):
             'format': '{:.1f}%'
         }
         self.general_stats_addcols(self.atropos_general_data, headers)
-
+    
+    def atropos_plots(self):
         for section in self.trim_sections:
             context = section(self.atropos_trim_data, self.atropos_general_data)
             if 'plot' in context:
-                self.section_html.append(context['plot'])
+                self.sections.append(context['plot'])
+        
+class QcModule(BaseAtroposModule):
+    def __init__(self, phase, **kwargs):
+        self.phase = phase.lower()
+        super().__init__(
+            name="Atropos: {}-trim QC".format(phase),
+            anchor='atropos-{}'.format(phase.lower()),
+            **kwargs)
     
-    def atropos_qc(self, phase):
+    def init_submodule(self):
+        self.atropos_qc_data = OrderedDict()
+        self.qc_sections = [
+            PerBaseQuality(),
+            #PerTileQuality()
+            PerSequenceQuality(),
+            #PerBaseContent(),
+            PerSequenceGC(),
+            PerBaseN(),
+            #SequenceLength(),
+            #Duplication(),
+            #Contaminants(),
+            #Kmers()
+        ]
+        # Colours to be used for plotting lines
+        self.status_colours = dict(
+            (status.name, status.color) 
+            for status in (PASS, WARN, FAIL))
+        self.status_colours['default'] = DEFAULT_COLOR
+    
+    def add_stats_data(self, sample_id, pairing, input_names, source, data):
+        self.atropos_qc_data[sample_id] = OrderedDict()
+        source_files = input_names
+        if pairing == 3:
+            self.atropos_qc_data[sample_id] = [None, None]
+            for idx in range(2):
+                read = 'read{}'.format(idx+1)
+                if read in data:
+                    self.atropos_qc_data[sample_id][idx] = data[read]
+                    self.atropos_qc_data[sample_id][idx]['source'] = source_files[idx]
+        else:
+            read = 'read{}'.format(pairing)
+            data[read]['source'] = source_files[pairing-1]
+            self.atropos_qc_data[sample_id] = [data[read], None]
+    
+    def atropos_general(self):
+        headers = OrderedDict()
+        headers['percent_fails_{}'.format(self.phase)] = {
+            'title': '% Failed ({}-trimming)'.format(self.phase),
+            'description': 'Percentage of Atropos QC modules failed ({}-trimming)'.format(self.phase),
+            'max': 100,
+            'min': 0,
+            'suffix': '%',
+            'scale': 'Reds',
+            'format': '{:.0f}%',
+            'hidden': True
+        }
+        self.general_stats_addcols(self.atropos_general_data, headers)
+    
+    def atropos_plots(self):
         # Add statuses to intro. Note that this is slightly different than
         # FastQC: Atropos reports the relevant statistic, and the threshold
         # for pass/warn/fail is configured in MutliQC (defaulting to
         # the thresholds defined in FastQC).
         statuses = {}
         fails = defaultdict(int)
-        phase_data = self.atropos_qc_data[phase]
         for section in self.qc_sections:
-            section_name = "{}_{}".format(phase, section.name)
-            context = section(phase_data, self.atropos_general_data, phase=phase)
+            section_name = "{}_{}".format(self.phase, section.name)
+            context = section(self.atropos_qc_data, self.atropos_general_data, phase=self.phase)
             if all(key in context for key in ('statuses', 'plot')):
                 statuses[section_name] = context['statuses']
                 for sample_id, status in statuses[section_name].items():
                     if status == FAIL:
                         fails[sample_id] += 1
-                self.section_html.append(context['plot'])
+                self.sections.append(context['plot'])
         
         for sample_id, num_fails in fails.items():
-            self.atropos_general_data[sample_id]['percent_fails_{}'.format(phase)] = \
+            self.atropos_general_data[sample_id]['percent_fails_{}'.format(self.phase)] = \
                 num_fails * 100 / len(fails)
         
         self.intro += PASSFAILS.format(json.dumps(simplify(statuses)))
+    
+class PreModule(QcModule):
+    def __init__(self, **kwargs):
+        super().__init__(phase='Pre', **kwargs)
+    
+    def add_submodule_data(self, sample_id, data):
+        self.atropos_general_data[sample_id] = {}
+        if 'pre' in data:
+            pairing = data['input']['input_read']
+            input_names = data['input']['input_names']
+            for source, phase_data in data['pre'].items():
+                self.add_stats_data(sample_id, pairing, input_names, source, phase_data)
+
+class PostModule(QcModule):
+    def __init__(self, **kwargs):
+        super().__init__(phase='Post', **kwargs)
+    
+    def add_submodule_data(self, sample_id, data):
+        self.atropos_general_data[sample_id] = {}
+        if 'post' in data and 'NoFilter' in data['post']:
+            pairing = data['input']['input_read']
+            input_names = data['input']['input_names']
+            for source, post_data in data['post']['NoFilter'].items():
+                self.add_stats_data(sample_id, pairing, input_names, source, post_data)
 
 # Base Section class
 
@@ -407,7 +431,7 @@ class Section(object):
         content1 = self.get_read_plot(context, plot_data1, 1)
         if plot_data2:
             content2 = self.get_read_plot(context, plot_data2, 2)
-            context['plot'] = (self.wrap_plots(content1, content2),)
+            context['plot'] = self.wrap_plots(content1, content2)
         else:
             context['plot'] = content1
     
@@ -429,7 +453,7 @@ class Section(object):
     def wrap_plots(self, *content):
         """Wrap a pair of plots in a <div>.
         """
-        return '<div class="pair-plot-wrapper">' + ''.join(content) + '<\\div>'
+        return '<div class="pair-plot-wrapper">' + ''.join(content) + '</div>'
     
     def format_html(self, context):
         """Format the html string with variables from the context.
@@ -448,7 +472,7 @@ class TrimmedLength(Section):
     name = 'trimmed_length'
     display = 'Trimmed length'
     anchor = 'atropos_trimmed_length'
-    hteader_html = """
+    header_html = """
 <p>This plot shows the number of reads with certain lengths of adapter trimmed.
 Obs/Exp shows the raw counts divided by the number expected due to sequencing
 errors. A defined peak may be related to adapter length. See the
@@ -493,13 +517,15 @@ how these numbers are generated.</p>
         return adapter_data
     
     def get_html(self, context, data):
-        html = self.hteader_html
+        html = self.header_html
         for adapter_seq, adapter_data in data.items():
             adapter_plots = []
             for side, reads in adapter_data.items():
                 if reads is None:
                     continue
                 for read, read_data in enumerate(reads, 1):
+                    if not any(read_data):
+                        continue
                     adapter_plots.append(linegraph.plot(
                         read_data, self.get_plot_config(
                             context, side=side, read=read)))
@@ -508,8 +534,9 @@ how these numbers are generated.</p>
     
     def get_plot_config(self, context, side='back', read=1):
         return {
-            'id': 'atropos_plot',
-            'title': 'Lengths of Trimmed Sequences\n{side}, read {read}'.format(
+            'id': 'atropos_trimmed_length_plot_{side}_{read}'.format(
+                side=side, read=read),
+            'title': 'Lengths of Trimmed Sequences\nSide={side}, Read={read}'.format(
                 side=side, read=read),
             'ylab': 'Counts',
             'xlab': 'Length Trimmed (bp)',
@@ -526,6 +553,15 @@ class QcSection(Section):
     default_thresholds = None
     compare = operator.lt
     
+    def get_plot(self, context, data):
+        """Returns the plot dict.
+        """
+        return {
+            'name': "{}".format(self.display),
+            'anchor': "{}_{}".format(self.anchor, context['phase']),
+            'content': self.get_html(context, data)
+        }
+
     def prepare_data(self, data, general):
         """Returns the data for this section from the parent dict.
         """
@@ -593,15 +629,17 @@ class PerBaseQuality(QcSection):
     anchor = 'atropos_per_base_sequence_quality'
     html = """
 <p>The mean quality value across each base position in the read. See the
-<a href="{}" target="_bkank">Atropos help</a>.</p>
+<a href="{}" target="_blank">Atropos help</a>.
+</p>
 {{plot}}""".format(ATROPOS_DOC_URL)
     # TODO: Add boxplots as in FastQC output.
     plot_type = linegraph
     
-    def get_plot_config(self, context, **kwargs):
+    def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_per_base_sequence_quality_plot',
-            'title': 'Mean Quality Scores',
+            'id': 'atropos_per_base_sequence_quality_plot_{phase}_{read}'.format(
+                phase=context['phase'], read=read),
+            'title': 'Mean Quality Scores: Read {}'.format(read),
             'ylab': 'Phred Score',
             'xlab': 'Position (bp)',
             'ymin': 0,
@@ -657,17 +695,18 @@ class PerSequenceQuality(QcSection):
     default_thresholds = (20, 27)
     html = """
 <p>The number of reads with average quality scores. Shows if a subset of reads
-has poor quality. See the <a href="{}" target="_bkank">Atropos help</a>.</p>
-{{plot}}""".format(ATROPOS_DOC_URL)
+has poor quality. See the <a href="{}" target="_blank">Atropos help</a>.</p>
+<p>{{plot}}</p>""".format(ATROPOS_DOC_URL)
     plot_type = linegraph
     
     def compute_statistic(self, context, data):
         return data['summary']['modes'][0]
     
-    def get_plot_config(self, context, **kwargs):
+    def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_per_sequence_quality_scores_plot',
-            'title': 'Per Sequence Quality Scores',
+            'id': 'atropos_per_sequence_quality_scores_plot_{phase}_{read}'.format(
+                phase=context['phase'], read=read),
+            'title': 'Per Sequence Quality Scores: Read {}'.format(read),
             'ylab': 'Count',
             'xlab': 'Mean Sequence Quality (Phred Score)',
             'ymin': 0,
@@ -691,7 +730,7 @@ class PerBaseContent(QcSection):
     anchor = 'atropos_per_base_sequence_content'
     header_html = """
 <p>The proportion of each base position for which each of the four normal DNA
-bases has been called. See the <a href="{}" target="_bkank">Atropos help</a>.</p>
+bases has been called. See the <a href="{}" target="_blank">Atropos help</a>.</p>
 <p class="text-primary"><span class="glyphicon glyphicon-info-sign"></span>
 Click a heatmap row to see a line plot for that dataset.</p>
 <div id="atropos_per_base_sequence_content_plot">
@@ -712,8 +751,8 @@ Click a heatmap row to see a line plot for that dataset.</p>
 </div>""".format(ATROPOS_DOC_URL)
     plot_html = """
 <script type="text/javascript">
-    atropos_seq_content_data{read} = {data};
-    $(function () {{ atropos_seq_content_heatmap(); }});
+    atropos_seq_content_data_{phase}_{read} = {data};
+    $(function () {{ atropos_seq_content_heatmap({phase}, {read}); }});
 </script>"""
     
     def get_sample_plot_data(self, context, data):
@@ -725,7 +764,8 @@ Click a heatmap row to see a line plot for that dataset.</p>
     def get_read_plot(self, context, plot_data, read):
         """Create the epic HTML for the Atropos sequence content heatmap.
         """
-        return self.plot_html.format(read=read, data=json.dumps(plot_data))
+        return self.plot_html.format(
+            phase=context['phase'], read=read, data=json.dumps(plot_data))
 
 class PerSequenceGC(QcSection):
     name = 'gc'
@@ -735,7 +775,7 @@ class PerSequenceGC(QcSection):
     default_thresholds = (0.3, 0.15)
     html =  """
 <p>The average GC content of reads. Normal random library typically have a
-roughly normal distribution of GC content. See the <a href="{}" target="_bkank">
+roughly normal distribution of GC content. See the <a href="{}" target="_blank">
 Atropos help</a>.</p>
 <p>The dashed black line shows theoretical GC content: {{theoretical_gc_name}}.</p>
 {{plot}}""".format(ATROPOS_DOC_URL)
@@ -816,8 +856,9 @@ Atropos help</a>.</p>
         plot_data = dict((sample_id, values[0]) for sample_id, values in data.items())
         plot_data_norm = dict((sample_id, values[1]) for sample_id, values in data.items())
         plot_config = {
-            'id': 'atropos_per_sequence_gc_content_plot',
-            'title': 'Per Sequence GC Content',
+            'id': 'atropos_per_sequence_gc_content_plot_{phase}_{read}'.format(
+                phase=context['phase'], read=read),
+            'title': 'Per Sequence GC Content: Read {}'.format(read),
             'ylab': 'Count',
             'xlab': '%GC',
             'ymin': 0,
@@ -856,7 +897,7 @@ class PerBaseN(QcSection):
     default_thresholds = (0.2, 0.05)
     html = """
 <p>The percentage of base calls at each position for which an N was called.
-See the <a href="{}" target="_bkank">Atropos help</a>.</p>
+See the <a href="{}" target="_blank">Atropos help</a>.</p>
 {{plot}}""".format(ATROPOS_DOC_URL)
     plot_type = linegraph
     
@@ -886,10 +927,11 @@ See the <a href="{}" target="_bkank">Atropos help</a>.</p>
     def compute_statistic(self, context, data):
         return sum(data['n_counts'].values()) / sum(data['total_counts'].values())
 
-    def get_plot_config(self, context, **kwargs):
+    def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_per_base_n_content_plot',
-            'title': 'Per Base N Content',
+            'id': 'atropos_per_base_n_content_plot_{phase}_{read}'.format(
+                phase=context['phase'], read=read),
+            'title': 'Per Base N Content: Read {}'.format(read),
             'ylab': 'Percentage N-Count',
             'xlab': 'Position in Read (bp)',
             'yCeiling': 100,
@@ -920,7 +962,7 @@ class SequenceLength(QcSection):
     threshold_statistic = 'length_range'
     html = """
 <p>The distribution of fragment sizes (read lengths) found.
-See the <a href="{}" target="_bkank">Atropos help</a>.</p>
+See the <a href="{}" target="_blank">Atropos help</a>.</p>
 {{plot}}""".format(ATROPOS_DOC_URL)
     all_same_html = """
 <p>All samples have sequences of a single length ({length} bp).</p>"""
@@ -960,10 +1002,11 @@ See the <a href="#general_stats">General Statistics Table</a>.</p>"""
         else:
             return super().get_html(context, data)
     
-    def get_plot_config(self, context, **kwargs):
+    def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_sequence_length_distribution_plot',
-            'title': 'Sequence Length Distribution',
+            'id': 'atropos_sequence_length_distribution_plot_{phase}_{read}'.format(
+                phase=context['phase'], read=read),
+            'title': 'Sequence Length Distribution: Read {}'.format(read),
             'ylab': 'Read Count',
             'xlab': 'Sequence Length (bp)',
             'ymin': 0,
@@ -1104,7 +1147,7 @@ def simplify(obj):
     #         'name': 'Sequence Duplication Levels',
     #         'anchor': 'fastqc_sequence_duplication_levels',
     #         'content': '<p>The relative level of duplication found for every sequence. ' +
-    #                     'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html" target="_bkank">FastQC help</a>.</p>' +
+    #                     'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html" target="_blank">FastQC help</a>.</p>' +
     #                     linegraph.plot(data, plot_config)
     #     })
     #
@@ -1157,7 +1200,7 @@ def simplify(obj):
     #         'name': 'Overrepresented sequences',
     #         'anchor': 'fastqc_overrepresented_sequences',
     #         'content': '<p> The total amount of overrepresented sequences found in each library. ' +
-    #                 'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/9%20Overrepresented%20Sequences.html" target="_bkank">FastQC help for further information</a>.</p>'
+    #                 'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/9%20Overrepresented%20Sequences.html" target="_blank">FastQC help for further information</a>.</p>'
     #                 + plot_html
     #         })
     #
@@ -1220,6 +1263,6 @@ def simplify(obj):
     #         'name': 'Adapter Content',
     #         'anchor': 'fastqc_adapter_content',
     #         'content': '<p>The cumulative percentage count of the proportion of your library which has seen each of the adapter sequences at each position. ' +
-    #                     'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/10%20Adapter%20Content.html" target="_bkank">FastQC help</a>. ' +
+    #                     'See the <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/10%20Adapter%20Content.html" target="_blank">FastQC help</a>. ' +
     #                     'Only samples with &ge; 0.1% adapter contamination are shown.</p>' + plot_html
     #     })
