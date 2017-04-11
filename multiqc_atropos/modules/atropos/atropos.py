@@ -26,17 +26,6 @@ from multiqc.modules.base_module import BaseMultiqcModule
 ATROPOS_GITHUB_URL = "https://github.com/jdidion/atropos"
 ATROPOS_DOC_URL = "http://atropos.readthedocs.org/en/latest/guide.html"
 
-## Assets
-
-ATROPOS_CSS = {
-    'assets/css/multiqc_atropos.css' :
-    os.path.join(os.path.dirname(__file__), 'assets', 'css', 'multiqc_atropos.css')
-}
-ATROPOS_JS = {
-    'assets/js/multiqc_atropos.js' :
-    os.path.join(os.path.dirname(__file__), 'assets', 'js', 'multiqc_atropos.js')
-}
-
 class Status(object):
     def __init__(self, name, val, color):
         self.name = name
@@ -58,7 +47,8 @@ PASS = Status('pass', 2, '#d9534f')
 
 DEFAULT_COLOR = '#999'
 
-PASSFAILS = '<script type="text/javascript">atropos_passfails = {};</script>'
+ADD_LISTENERS = '<script type="text/javascript">$(function () {{ add_listeners({phase}, atropos_passfails_{phase})  }});</script>'
+PASSFAILS = '<script type="text/javascript">atropos_passfails_{phase} = {statuses};</script>'
 
 # Initialise the logger
 log = logging.getLogger(__name__)
@@ -66,11 +56,12 @@ log = logging.getLogger(__name__)
 ## Modules
 
 class BaseAtroposModule(BaseMultiqcModule):
-    """Atropos module class. Loads JSON ouptut for read trimming stats (which
-    are equivalent to Cutadapt) and pre- and post-trimming stats (which are
-    very similar to FastQC).
+    """Base Atropos module class. Loads JSON ouptut. Submodule classes are
+    responsible for extracting data and generating summary table and plots.
     
     Args:
+        name: Module name.
+        anchor: HTML anchor name.
         from_config: Whether to load data from configured locations. This should
             only be set to False in tests.
     """
@@ -81,17 +72,23 @@ class BaseAtroposModule(BaseMultiqcModule):
             href=ATROPOS_GITHUB_URL,
             info="is a general-purpose NGS pre-processing tool that "\
                  "specializes in adatper- and quality-trimming.")
-        self.atropos_general_data = OrderedDict()
         # List of sample IDs
         self.atropos_sample_ids = []
+        # General data (for summary table)
+        self.atropos_general_data = OrderedDict()
         # Sections of the report
         self.sections = []
+        # Add any submodule-specific variables
         self.init_submodule()
+        # Load data from logs and generate the report
         if from_config:
             self.init_from_config()
-            self.atropos_report()
+            if self.atropos_sample_ids:
+                self.atropos_report()
     
     def init_submodule(self):
+        """Initalize any submodule-specific attributes.
+        """
         raise NotImplementedError()
 
     def init_from_config(self):
@@ -107,7 +104,8 @@ class BaseAtroposModule(BaseMultiqcModule):
         for file_dict in self.find_log_files(patterns, filehandles=True):
             fileobj = file_dict['f']
             data = json.load(fileobj)
-            self.add_atropos_data(data, fileobj, file_dict)
+            if self.can_add_atropos_data(data):
+                self.add_atropos_data(data, fileobj, file_dict)
         
         num_samples = len(self.atropos_sample_ids)
         if num_samples == 0:
@@ -115,6 +113,9 @@ class BaseAtroposModule(BaseMultiqcModule):
             raise UserWarning
         else:
             log.info("Found %s reports", num_samples)
+    
+    def can_add_atropos_data(self, data):
+        return True
     
     def add_atropos_data(self, data=None, data_source=None, file_dict=None):
         """For each sample, Atropos generates a <sample>.json file. That
@@ -152,6 +153,8 @@ class BaseAtroposModule(BaseMultiqcModule):
         raise NotImplementedError()
     
     def atropos_report(self):
+        """Generate the report.
+        """
         if not self.atropos_sample_ids:
             log.debug("No reports to process; atropos_report raising UserWarning")
             raise UserWarning
@@ -163,14 +166,27 @@ class BaseAtroposModule(BaseMultiqcModule):
         self.atropos_plots()
     
     def atropos_general(self):
+        """Add items to the summary table.
+        """
         raise NotImplementedError()
     
     def atropos_plots(self):
+        """Add plots to the report.
+        """
         raise NotImplementedError()
 
 class TrimModule(BaseAtroposModule):
     def __init__(self, **kwargs):
         super().__init__(name="Atropos", anchor="atropos", **kwargs)
+        # TODO: these should only be loaded when there is QC data
+        self.css = {
+            'assets/css/multiqc_atropos.css' :
+            os.path.join(os.path.dirname(__file__), 'assets', 'css', 'multiqc_atropos.css')
+        }
+        self.js = {
+            'assets/js/multiqc_atropos.js' :
+                os.path.join(os.path.dirname(__file__), 'assets', 'js', 'multiqc_atropos.js')
+        }
     
     def init_submodule(self):
         self.atropos_general_data = OrderedDict()
@@ -178,9 +194,6 @@ class TrimModule(BaseAtroposModule):
         self.trim_sections = [
             TrimmedLength()
         ]
-        # Add to self.css and self.js to be included in template
-        self.css = ATROPOS_CSS
-        self.js = ATROPOS_JS
     
     def add_submodule_data(self, sample_id, data):
         self.atropos_general_data[sample_id] = data['derived'].copy()
@@ -236,12 +249,13 @@ class TrimModule(BaseAtroposModule):
             'format': '{:.0f}'
         }
         headers['fraction_bp_trimmed'] = {
-            'title': '% Trimmed',
+            'title': '% Base Pairs Trimmed',
             'description': '% Total Base Pairs trimmed',
             'max': 100,
             'min': 0,
             'suffix': '%',
             'scale': 'RdYlBu-rev',
+            'modify': lambda x: x * 100,
             'format': '{:.1f}%'
         }
         headers['fraction_records_with_adapters'] = {
@@ -251,6 +265,7 @@ class TrimModule(BaseAtroposModule):
             'min': 0,
             'suffix': '%',
             'scale': 'RdYlBu-rev',
+            'modify': lambda x: x * 100,
             'format': '{:.1f}%'
         }
         self.general_stats_addcols(self.atropos_general_data, headers)
@@ -275,7 +290,7 @@ class QcModule(BaseAtroposModule):
             PerBaseQuality(),
             #PerTileQuality()
             PerSequenceQuality(),
-            #PerBaseContent(),
+            PerBaseContent(),
             PerSequenceGC(),
             PerBaseN(),
             #SequenceLength(),
@@ -289,6 +304,9 @@ class QcModule(BaseAtroposModule):
             for status in (PASS, WARN, FAIL))
         self.status_colours['default'] = DEFAULT_COLOR
     
+    def can_add_atropos_data(self, data):
+        return self.phase in data
+        
     def add_stats_data(self, sample_id, pairing, input_names, source, data):
         self.atropos_qc_data[sample_id] = OrderedDict()
         source_files = input_names
@@ -326,7 +344,7 @@ class QcModule(BaseAtroposModule):
         statuses = {}
         fails = defaultdict(int)
         for section in self.qc_sections:
-            section_name = "{}_{}".format(self.phase, section.name)
+            section_name = "{}_{}".format(section.name, self.phase)
             context = section(self.atropos_qc_data, self.atropos_general_data, phase=self.phase)
             if all(key in context for key in ('statuses', 'plot')):
                 statuses[section_name] = context['statuses']
@@ -337,9 +355,10 @@ class QcModule(BaseAtroposModule):
         
         for sample_id, num_fails in fails.items():
             self.atropos_general_data[sample_id]['percent_fails_{}'.format(self.phase)] = \
-                num_fails * 100 / len(fails)
+                num_fails * 100 / len(self.qc_sections)
         
-        self.intro += PASSFAILS.format(json.dumps(simplify(statuses)))
+        self.intro += ADD_LISTENERS.format(phase=self.phase)
+        self.intro += PASSFAILS.format(phase=self.phase, statuses=json.dumps(simplify(statuses)))
     
 class PreModule(QcModule):
     def __init__(self, **kwargs):
@@ -347,23 +366,24 @@ class PreModule(QcModule):
     
     def add_submodule_data(self, sample_id, data):
         self.atropos_general_data[sample_id] = {}
-        if 'pre' in data:
-            pairing = data['input']['input_read']
-            input_names = data['input']['input_names']
-            for source, phase_data in data['pre'].items():
-                self.add_stats_data(sample_id, pairing, input_names, source, phase_data)
+        pairing = data['input']['input_read']
+        input_names = data['input']['input_names']
+        for source, phase_data in data['pre'].items():
+            self.add_stats_data(sample_id, pairing, input_names, source, phase_data)
 
 class PostModule(QcModule):
     def __init__(self, **kwargs):
         super().__init__(phase='Post', **kwargs)
     
+    def can_add_atropos_data(self, data):
+        return super().can_add_atropos_data(data) and 'NoFilter' in data['post']
+    
     def add_submodule_data(self, sample_id, data):
         self.atropos_general_data[sample_id] = {}
-        if 'post' in data and 'NoFilter' in data['post']:
-            pairing = data['input']['input_read']
-            input_names = data['input']['input_names']
-            for source, post_data in data['post']['NoFilter'].items():
-                self.add_stats_data(sample_id, pairing, input_names, source, post_data)
+        pairing = data['input']['input_read']
+        input_names = data['input']['input_names']
+        for source, post_data in data['post']['NoFilter'].items():
+            self.add_stats_data(sample_id, pairing, input_names, source, post_data)
 
 # Base Section class
 
@@ -733,26 +753,26 @@ class PerBaseContent(QcSection):
 bases has been called. See the <a href="{}" target="_blank">Atropos help</a>.</p>
 <p class="text-primary"><span class="glyphicon glyphicon-info-sign"></span>
 Click a heatmap row to see a line plot for that dataset.</p>
-<div id="atropos_per_base_sequence_content_plot">
+<div id="atropos_per_base_sequence_content_plot_{{phase}}_{{read}}">
     <h5><span class="s_name"><em class="text-muted">rollover for sample name</em></span></h5>
     <div class="atropos_seq_heatmap_key">
-        Position: <span id="atropos_seq_heatmap_key_pos">-</span>
-        <div><span id="atropos_seq_heatmap_key_t"> %T: <span>-</span></span></div>
-        <div><span id="atropos_seq_heatmap_key_c"> %C: <span>-</span></span></div>
-        <div><span id="atropos_seq_heatmap_key_a"> %A: <span>-</span></span></div>
-        <div><span id="atropos_seq_heatmap_key_g"> %G: <span>-</span></span></div>
+        Position: <span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_pos">-</span>
+        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_t"> %T: <span>-</span></span></div>
+        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_c"> %C: <span>-</span></span></div>
+        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_a"> %A: <span>-</span></span></div>
+        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_g"> %G: <span>-</span></span></div>
     </div>
-    <div id="atropos_seq_heatmap_div" class="atropos-overlay-plot">
-        <div id="atropos_seq" class="hc-plot">
-            <canvas id="atropos_seq_heatmap" height="100%" width="800px" style="width:100%;"></canvas>
+    <div id="atropos_seq_heatmap_{{phase}}_{{read}}_div" class="atropos-overlay-plot">
+        <div id="atropos_seq_{{phase}}_{{read}}" class="hc-plot">
+            <canvas id="atropos_seq_heatmap_{{phase}}_{{read}}" height="100%" width="800px" style="width:100%;"></canvas>
         </div>
     </div>
     <div class="clearfix"></div>
 </div>""".format(ATROPOS_DOC_URL)
     plot_html = """
 <script type="text/javascript">
-    atropos_seq_content_data_{phase}_{read} = {data};
-    $(function () {{ atropos_seq_content_heatmap({phase}, {read}); }});
+    atropos_seq_content_heatmap_{phase}_{read} = SeqContentHeatmap({phase}, {read}, {data}, atropos_passfails_{phase});
+    $(function () {{ atropos_seq_content_heatmap_{phase}_{read}.draw(); }});
 </script>"""
     
     def get_sample_plot_data(self, context, data):

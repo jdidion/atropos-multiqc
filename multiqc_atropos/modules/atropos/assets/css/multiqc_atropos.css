@@ -61,16 +61,16 @@
 }
 
 
-#atropos_seq_heatmap {
+#atropos_pre_seq_heatmap,#atropos_post_seq_heatmap {
   cursor: pointer;
 }
-#atropos_seq_heatmap_div .hc-plot-wrapper {
+#atropos_pre_seq_heatmap_div,#atropos_pre_seq_heatmap_div .hc-plot-wrapper {
   height: 300px;
 }
-#atropos_seq_heatmap_footer {
+#atropos_pre_seq_heatmap_footer,#atropos_post_seq_heatmap_footer {
   clear:both;
 }
-#atropos_sequence_content_plot h5 {
+#atropos_pre_sequence_content_plot,#atropos_post_sequence_content_plot h5 {
   display: inline-block;
   height: 18px;
 }
@@ -90,7 +90,7 @@
   padding: 10px;
 }
 
-#atropos_seq_heatmap_key_t { border-bottom: 1px solid red; }
-#atropos_seq_heatmap_key_c { border-bottom: 1px solid blue; }
-#atropos_seq_heatmap_key_a { border-bottom: 1px solid green; }
-#atropos_seq_heatmap_key_g { border-bottom: 1px solid black; }
+#atropos_pre_seq_heatmap_key_t,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid red; }
+#atropos_pre_seq_heatmap_key_c,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid blue; }
+#atropos_pre_seq_heatmap_key_a,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid green; }
+#atropos_pre_seq_heatmap_key_g,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid black; }
