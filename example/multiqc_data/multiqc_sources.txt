@@ -1,0 +1,2 @@
+Module	Section	Sample Name	Source
+Atropos	all_sections	test	/Users/didionjp/projects/atropos-multiqc/example/summary.json

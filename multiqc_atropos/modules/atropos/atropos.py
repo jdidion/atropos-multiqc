@@ -14,7 +14,6 @@ from numbers import Number
 import operator
 import os
 import json
-import re
 from numpy import mean, multiply, cumsum
 from multiqc import config
 from multiqc.plots import linegraph
@@ -133,10 +132,10 @@ class MultiqcModule(BaseMultiqcModule):
         
         num_samples = len(self.atropos_sample_ids)
         if num_samples == 0:
-            log.debug("Could not find any reports in {}".format(config.analysis_dir))
+            log.debug("Could not find any reports in %s", config.analysis_dir)
             raise UserWarning
         else:
-            log.info("Found {} reports".format(num_samples))
+            log.info("Found %s reports", num_samples)
     
     def add_atropos_data(self, data=None, data_source=None, file_dict=None):
         """For each sample, Atropos generates a <sample>.json file. That
@@ -167,6 +166,8 @@ class MultiqcModule(BaseMultiqcModule):
             self.add_data_source(file_dict, sample_id)
         
         self.atropos_general_data[sample_id] = data['derived'].copy()
+        self.atropos_general_data[sample_id]['mean_sequence_length'] = \
+            mean(data['derived']['mean_sequence_lengths'])
         self.atropos_general_data[sample_id].update(dict(
             (key, data[key])
             for key in (
@@ -177,10 +178,10 @@ class MultiqcModule(BaseMultiqcModule):
             self.atropos_trim_data[sample_id] = data['trim']
             self.atropos_general_data[sample_id]['fraction_bp_trimmed'] = \
                 1.0 - data['trim']['formatters']['fraction_total_bp_written']
-            for name, mod_dict in data['trim']['modifiers'].items():
-                if name in ('AdapterCutter', 'InsertAdapterCutter'):
+            for mod_dict in data['trim']['modifiers'].values():
+                if 'fraction_records_with_adapters' in mod_dict:
                     self.atropos_general_data[sample_id]['fraction_records_with_adapters'] = \
-                        mod_dict['fraction_records_with_adapters']
+                        mean(mod_dict['fraction_records_with_adapters'])
                     break
         
         pairing = data['input']['input_read']
@@ -248,7 +249,7 @@ class MultiqcModule(BaseMultiqcModule):
             'modify': lambda x: x / 1000000,
             'shared_key': 'read_count'
         }
-        headers['total_bp_counts'] = {
+        headers['sum_total_bp_count'] = {
             'title': 'M bp',
             'description': 'Total Base Pairs (millions)',
             'min': 0,
@@ -256,7 +257,7 @@ class MultiqcModule(BaseMultiqcModule):
             'modify': lambda x: x / 1000000,
             'shared_key': 'base_count'
         }
-        headers['avg_sequence_length'] = {
+        headers['mean_sequence_length'] = {
             'title': 'Length',
             'description': 'Average Sequence Length (bp)',
             'min': 0,
@@ -311,6 +312,10 @@ class MultiqcModule(BaseMultiqcModule):
         }
         self.general_stats_addcols(self.atropos_general_data, headers)
 
+        for section in self.trim_sections:
+            context = section(self.atropos_trim_data, self.atropos_general_data)
+            if 'plot' in context:
+                self.section_html.append(context['plot'])
     
     def atropos_qc(self, phase):
         # Add statuses to intro. Note that this is slightly different than
@@ -322,12 +327,13 @@ class MultiqcModule(BaseMultiqcModule):
         phase_data = self.atropos_qc_data[phase]
         for section in self.qc_sections:
             section_name = "{}_{}".format(phase, section.name)
-            context = section(phase_data, phase=phase)
-            statuses[section_name] = context['statuses']
-            for sample_id, status in statuses[section_name].items():
-                if status == FAIL:
-                    fails[sample_id] += 1
-            self.section_html.append(context['plot'])
+            context = section(phase_data, self.atropos_general_data, phase=phase)
+            if all(key in context for key in ('statuses', 'plot')):
+                statuses[section_name] = context['statuses']
+                for sample_id, status in statuses[section_name].items():
+                    if status == FAIL:
+                        fails[sample_id] += 1
+                self.section_html.append(context['plot'])
         
         for sample_id, num_fails in fails.items():
             self.atropos_general_data[sample_id]['percent_fails_{}'.format(phase)] = \
@@ -351,30 +357,26 @@ class Section(object):
     display = \
     anchor = \
     plot_type = \
+    plot_config = \
     html = None
     #headers = {}
     
-    def __call__(self, data, **kwargs):
-        section_data = self.prepare_data(data)
-        return self.create_context(section_data, **kwargs)
+    def __call__(self, data, general, **kwargs):
+        section_data = self.prepare_data(data, general)
+        context = kwargs.copy()
+        self.add_to_context(context, section_data)
+        return context
     
-    def prepare_data(self, data):
+    def prepare_data(self, data, general):
         """Returns the data for this section from the parent dict.
         """
-        section_data = {}
-        for sample_id, (read1_data, read2_data) in data.items():
-            sample_data = [None, None]
-            if read1_data:
-                sample_data[0] = read1_data[self.name]
-            if read2_data:
-                sample_data[1] = read2_data[self.name]
-            section_data[sample_id] = sample_data
-        return section_data
+        raise NotImplementedError()
     
-    def create_context(self, data, **kwargs):
-        """Create the context dict.
+    def add_to_context(self, context, data):
+        """Add plot and any intermediate data to context.
         """
-        return dict(plot=self.get_plot(context, data))
+        if data is not None:
+            context['plot'] = self.get_plot(context, data)
     
     def get_plot(self, context, data):
         """Returns the plot dict.
@@ -405,7 +407,7 @@ class Section(object):
         content1 = self.get_read_plot(context, plot_data1, 1)
         if plot_data2:
             content2 = self.get_read_plot(context, plot_data2, 2)
-            context['plot'] = (self.wrap_plot_pair(content1, content2),)
+            context['plot'] = (self.wrap_plots(content1, content2),)
         else:
             context['plot'] = content1
     
@@ -417,17 +419,17 @@ class Section(object):
     def get_read_plot(self, context, plot_data, read):
         """Returns the plot for a single read.
         """
-        return self.plot_type.plot(plot_data, self.get_plot_config(context))
+        return self.plot_type.plot(plot_data, self.get_plot_config(context, read=read))
     
-    def get_plot_config(self, context):
+    def get_plot_config(self, context, **kwargs):
         """Returns the plot config dict.
         """
         return self.plot_config
     
-    def wrap_plot_pair(self, content1, content2):
+    def wrap_plots(self, *content):
         """Wrap a pair of plots in a <div>.
         """
-        return '<div class="pair-plot-wrapper">' + content1 + content2 + '<\\div>'
+        return '<div class="pair-plot-wrapper">' + ''.join(content) + '<\\div>'
     
     def format_html(self, context):
         """Format the html string with variables from the context.
@@ -437,32 +439,86 @@ class Section(object):
 # Trim sections
 
 class TrimmedLength(Section):
+    """There is one plot (or pair of plots) per adapter. Data is stored as
+    adapter: {front/back: [<read1>, <read2>]}, where front/back is the end from
+    which the adapter is trimmed (so there are four plots in the case of 
+    adapters that are trimmed at both the front and back (i.e. linked and
+    anywhere)), and where each read is a {sample_id: {x:y}} dict.
+    """
     name = 'trimmed_length'
     display = 'Trimmed length'
     anchor = 'atropos_trimmed_length'
-    html = """
+    hteader_html = """
 <p>This plot shows the number of reads with certain lengths of adapter trimmed.
 Obs/Exp shows the raw counts divided by the number expected due to sequencing
 errors. A defined peak may be related to adapter length. See the
 <a href="{}" target="_blank">Atropos documentation</a> for more information on
 how these numbers are generated.</p>
-{{plot}}""".format(ATROPOS_DOC_URL)
-    plot_type = linegraph
-    plot_config = {
-        'id': 'atropos_plot',
-        'title': 'Lengths of Trimmed Sequences',
-        'ylab': 'Counts',
-        'xlab': 'Length Trimmed (bp)',
-        'xDecimals': False,
-        'ymin': 0,
-        'tt_label': '<b>{point.x} bp trimmed</b>: {point.y:.0f}',
-        'data_labels': [{'name': 'Counts', 'ylab': 'Count'},
-                        {'name': 'Obs/Exp', 'ylab': 'Observed / Expected'}]
-    }
+""".format(ATROPOS_DOC_URL)
     
-        html += linegraph.plot(
-            [self.atropos_length_counts, self.atropos_length_obsexp],
-            plot_config)
+    def prepare_data(self, data, general):
+        def add_lengths(side, read, sample_id, num_reads, adapter_length, read_dict, dest_dict):
+            for key in ('lengths_{}', '{0}_lengths_{0}'):
+                key = key.format(side)
+                if key in read_dict:
+                    if dest_dict[side] is None:
+                        dest_dict[side] = [[{},{}], [{},{}]]
+                    hist = sort_hist(read_dict[key])
+                    dest_dict[side][read][0][sample_id] = hist
+                    dest_dict[side][read][1][sample_id] = ordered_dict(
+                        (length, num_reads * 0.25 ** min(length, adapter_length))
+                        for length, count in hist.items())
+                    return
+        
+        adapter_data = {}
+        for sample_id, trim_data in data.items():
+            if 'modifiers' not in trim_data:
+                continue
+            num_reads = general[sample_id]['total_record_count']
+            for modifier_dict in trim_data['modifiers'].values():
+                if 'adapters' in modifier_dict:
+                    for read, read_dict in enumerate(modifier_dict['adapters']):
+                        for adapter_id, adapter_dict in read_dict.items():
+                            seq = adapter_dict['sequence']
+                            if seq not in adapter_data:
+                                adapter_data[seq] = dict(front=None, back=None)
+                            seqlen = len(seq)
+                            add_lengths(
+                                'front', read, sample_id, num_reads, seqlen, 
+                                adapter_dict, adapter_data[seq])
+                            add_lengths(
+                                'back', read, sample_id, num_reads, seqlen, 
+                                adapter_dict, adapter_data[seq])
+        
+        return adapter_data
+    
+    def get_html(self, context, data):
+        html = self.hteader_html
+        for adapter_seq, adapter_data in data.items():
+            adapter_plots = []
+            for side, reads in adapter_data.items():
+                if reads is None:
+                    continue
+                for read, read_data in enumerate(reads, 1):
+                    adapter_plots.append(linegraph.plot(
+                        read_data, self.get_plot_config(
+                            context, side=side, read=read)))
+            html += self.wrap_plots(*adapter_plots)
+        return html
+    
+    def get_plot_config(self, context, side='back', read=1):
+        return {
+            'id': 'atropos_plot',
+            'title': 'Lengths of Trimmed Sequences\n{side}, read {read}'.format(
+                side=side, read=read),
+            'ylab': 'Counts',
+            'xlab': 'Length Trimmed (bp)',
+            'xDecimals': False,
+            'ymin': 0, 
+            'tt_label': '<b>{point.x} bp trimmed</b>: {point.y:.0f}',
+            'data_labels': [{'name': 'Counts', 'ylab': 'Count'},
+                            {'name': 'Obs/Exp', 'ylab': 'Observed / Expected'}]
+        }
 
 # QC sections
 
@@ -470,15 +526,24 @@ class QcSection(Section):
     default_thresholds = None
     compare = operator.lt
     
-    def create_context(self, data, phase=None):
-        """Create the context dict.
+    def prepare_data(self, data, general):
+        """Returns the data for this section from the parent dict.
         """
-        context = dict(phase=phase)
+        section_data = {}
+        for sample_id, (read1_data, read2_data) in data.items():
+            sample_data = [None, None]
+            if read1_data:
+                sample_data[0] = read1_data[self.name]
+            if read2_data:
+                sample_data[1] = read2_data[self.name]
+            section_data[sample_id] = sample_data
+        return section_data
+    
+    def add_to_context(self, context, data):
         context['statuses'] = self.get_statuses(context, data)
         #if section.headers:
         #    self.general_stats_addcols(section_data, section.headers)
         context['plot'] = self.get_plot(context, data)
-        return context
     
     def get_statuses(self, context, data):
         """Returns {sample_id: status} dict.
@@ -518,8 +583,7 @@ class QcSection(Section):
         for status, threshold in zip((FAIL, WARN), self.default_thresholds):
             if self.compare(stat, threshold):
                 return status
-        else:
-            return PASS
+        return PASS
 
 ## Static HTML/templates
 
@@ -534,7 +598,7 @@ class PerBaseQuality(QcSection):
     # TODO: Add boxplots as in FastQC output.
     plot_type = linegraph
     
-    def get_plot_config(self, context):
+    def get_plot_config(self, context, **kwargs):
         return {
             'id': 'atropos_per_base_sequence_quality_plot',
             'title': 'Mean Quality Scores',
@@ -600,7 +664,7 @@ has poor quality. See the <a href="{}" target="_bkank">Atropos help</a>.</p>
     def compute_statistic(self, context, data):
         return data['summary']['modes'][0]
     
-    def get_plot_config(self, context):
+    def get_plot_config(self, context, **kwargs):
         return {
             'id': 'atropos_per_sequence_quality_scores_plot',
             'title': 'Per Sequence Quality Scores',
@@ -676,8 +740,7 @@ Atropos help</a>.</p>
 <p>The dashed black line shows theoretical GC content: {{theoretical_gc_name}}.</p>
 {{plot}}""".format(ATROPOS_DOC_URL)
     
-    def create_context(self, phase, data):
-        context = super().create_context(phase, data)
+    def add_to_context(self, context, data):
         theoretical_gc = theoretical_gc_name = None
         max_total = 0
         
@@ -725,7 +788,8 @@ Atropos help</a>.</p>
         context['theoretical_gc'] = theoretical_gc
         context['theoretical_gc_name'] = theoretical_gc_name
         context['max_total'] = max_total
-        return context
+        
+        super().add_to_context(context, data)
     
     def compute_statistic(self, context, data):
         maxcount = max(data['hist'].values())
@@ -796,7 +860,7 @@ See the <a href="{}" target="_bkank">Atropos help</a>.</p>
 {{plot}}""".format(ATROPOS_DOC_URL)
     plot_type = linegraph
     
-    def prepare_data(self, data):
+    def prepare_data(self, data, general):
         """Returns the data for this section from the parent dict.
         """
         def get_n_data(bases):
@@ -822,7 +886,7 @@ See the <a href="{}" target="_bkank">Atropos help</a>.</p>
     def compute_statistic(self, context, data):
         return sum(data['n_counts'].values()) / sum(data['total_counts'].values())
 
-    def get_plot_config(self, context):
+    def get_plot_config(self, context, **kwargs):
         return {
             'id': 'atropos_per_base_n_content_plot',
             'title': 'Per Base N Content',
@@ -896,7 +960,7 @@ See the <a href="#general_stats">General Statistics Table</a>.</p>"""
         else:
             return super().get_html(context, data)
     
-    def get_plot_config(self, context):
+    def get_plot_config(self, context, **kwargs):
         return {
             'id': 'atropos_sequence_length_distribution_plot',
             'title': 'Sequence Length Distribution',
@@ -911,7 +975,6 @@ See the <a href="#general_stats">General Statistics Table</a>.</p>"""
     
     def get_sample_plot_data(self, context, data):
         return data['lengths']['hist']
-
 
 ## Utils
 
@@ -930,6 +993,11 @@ def ordered_dict(iterable):
     for key, value in iterable:
         d[key] = value
     return d
+
+def sort_hist(hist):
+    return ordered_dict(sorted(
+        ((int(length), count) for length, count in hist.items()),
+        key=lambda x: x[0]))
 
 def weighted_lower_quantile(values, freqs, quantile):
     for i, frac in enumerate(freqs):
@@ -996,7 +1064,7 @@ def simplify(obj):
     if isinstance(obj, Iterable):
         return tuple(simplify(item) for item in obj)
     
-    return (str(obj))
+    return str(obj)
 
     # These stats are not yet implemented in Atropos.
     #
