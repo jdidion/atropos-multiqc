@@ -22,6 +22,7 @@ from multiqc.modules.base_module import BaseMultiqcModule
 ## Hard-coded URLs
 # TODO: eventually these need pointers to specific sections of the docs
 # TODO: handle multiplexed output
+# TODO: compute read1 and read2 status separately
 
 ATROPOS_GITHUB_URL = "https://github.com/jdidion/atropos"
 ATROPOS_DOC_URL = "http://atropos.readthedocs.org/en/latest/guide.html"
@@ -41,13 +42,13 @@ class Status(object):
     def __repr__(self):
         return self.name
 
-FAIL = Status('fail', 0, '#5cb85c')
+FAIL = Status('fail', 0, '#d9534f')
 WARN = Status('warn', 1, '#f0ad4e')
-PASS = Status('pass', 2, '#d9534f')
+PASS = Status('pass', 2, '#5cb85c')
 
 DEFAULT_COLOR = '#999'
 
-ADD_LISTENERS = '<script type="text/javascript">$(function () {{ add_listeners({phase}, atropos_passfails_{phase})  }});</script>'
+ADD_LISTENERS = '<script type="text/javascript">$(function () {{ add_atropos_listeners("{phase}", atropos_passfails_{phase})  }});</script>'
 PASSFAILS = '<script type="text/javascript">atropos_passfails_{phase} = {statuses};</script>'
 
 # Initialise the logger
@@ -65,13 +66,15 @@ class BaseAtroposModule(BaseMultiqcModule):
         from_config: Whether to load data from configured locations. This should
             only be set to False in tests.
     """
-    def __init__(self, name, anchor, from_config=True):
+    def __init__(self, name, anchor, info='', from_config=True):
         # Initialise the parent object
         super().__init__(
             name=name, anchor=anchor,
             href=ATROPOS_GITHUB_URL,
-            info="is a general-purpose NGS pre-processing tool that "\
-                 "specializes in adatper- and quality-trimming.")
+            info=info+"is a general-purpose NGS pre-processing tool that "\
+                 "specializes in adatper- and quality-trimming, written "
+                 "by John Didion at NHGRI. It is a fork of Cutadapt, "
+                 "written by Marcel Martin at Stockholm University.")
         # List of sample IDs
         self.atropos_sample_ids = []
         # General data (for summary table)
@@ -180,12 +183,12 @@ class TrimModule(BaseAtroposModule):
         super().__init__(name="Atropos", anchor="atropos", **kwargs)
         # TODO: these should only be loaded when there is QC data
         self.css = {
-            'assets/css/multiqc_atropos.css' :
+            'atropos-assets/css/multiqc_atropos.css' :
             os.path.join(os.path.dirname(__file__), 'assets', 'css', 'multiqc_atropos.css')
         }
         self.js = {
-            'assets/js/multiqc_atropos.js' :
-                os.path.join(os.path.dirname(__file__), 'assets', 'js', 'multiqc_atropos.js')
+            'atropos-assets/js/multiqc_atropos.js' :
+            os.path.join(os.path.dirname(__file__), 'assets', 'js', 'multiqc_atropos.js')
         }
     
     def init_submodule(self):
@@ -282,6 +285,7 @@ class QcModule(BaseAtroposModule):
         super().__init__(
             name="Atropos: {}-trim QC".format(phase),
             anchor='atropos-{}'.format(phase.lower()),
+            info="reports {}-trimming statistics. Atropos ".format(phase),
             **kwargs)
     
     def init_submodule(self):
@@ -484,10 +488,11 @@ class Section(object):
 
 class TrimmedLength(Section):
     """There is one plot (or pair of plots) per adapter. Data is stored as
-    adapter: {front/back: [<read1>, <read2>]}, where front/back is the end from
-    which the adapter is trimmed (so there are four plots in the case of 
+    adapter_seq: {front/back: [<read1>, <read2>]}, where front/back is the end 
+    from which the adapter is trimmed (so there are four plots in the case of 
     adapters that are trimmed at both the front and back (i.e. linked and
-    anywhere)), and where each read is a {sample_id: {x:y}} dict.
+    anywhere)), and where each read is [<obs>,<exp>], where obs and exp are 
+    each a {sample_id: {x:y}} dict for the observed and expected distributions.
     """
     name = 'trimmed_length'
     display = 'Trimmed length'
@@ -540,7 +545,8 @@ how these numbers are generated.</p>
         html = self.header_html
         for adapter_seq, adapter_data in data.items():
             adapter_plots = []
-            for side, reads in adapter_data.items():
+            for side in sorted(adapter_data.keys()):
+                reads = adapter_data[side]
                 if reads is None:
                     continue
                 for read, read_data in enumerate(reads, 1):
@@ -548,16 +554,16 @@ how these numbers are generated.</p>
                         continue
                     adapter_plots.append(linegraph.plot(
                         read_data, self.get_plot_config(
-                            context, side=side, read=read)))
+                            context, seq=adapter_seq, side=side, read=read)))
             html += self.wrap_plots(*adapter_plots)
         return html
     
-    def get_plot_config(self, context, side='back', read=1):
+    def get_plot_config(self, context, seq='', side='back', read=1):
         return {
-            'id': 'atropos_trimmed_length_plot_{side}_{read}'.format(
-                side=side, read=read),
-            'title': 'Lengths of Trimmed Sequences\nSide={side}, Read={read}'.format(
-                side=side, read=read),
+            'id': 'atropos_trimmed_length_plot_{seq}_{side}_{read}'.format(
+                seq=seq, side=side, read=read),
+            'title': 'Lengths of Trimmed Sequences<br/>Seq={seq}, Side={side}, Read={read}'.format(
+                seq=seq, side=side, read=read),
             'ylab': 'Counts',
             'xlab': 'Length Trimmed (bp)',
             'xDecimals': False,
@@ -626,7 +632,7 @@ class QcSection(Section):
         """Returns the status for one or a pair of threshold statistics.
         """
         status1 = self.get_status_for(context, stat1)
-        if stat2:
+        if stat2 is not None:
             status2 = self.get_status_for(context, stat2)
             return min(status1, status2)
         else:
@@ -646,7 +652,7 @@ class QcSection(Section):
 class PerBaseQuality(QcSection):
     name = 'base_qualities'
     display = 'Sequence Quality Histograms'
-    anchor = 'atropos_per_base_sequence_quality'
+    anchor = 'atropos_base_qualities'
     html = """
 <p>The mean quality value across each base position in the read. See the
 <a href="{}" target="_blank">Atropos help</a>.
@@ -657,7 +663,7 @@ class PerBaseQuality(QcSection):
     
     def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_per_base_sequence_quality_plot_{phase}_{read}'.format(
+            'id': 'atropos_base_qualities_plot_{phase}_{read}'.format(
                 phase=context['phase'], read=read),
             'title': 'Mean Quality Scores: Read {}'.format(read),
             'ylab': 'Phred Score',
@@ -676,10 +682,14 @@ class PerBaseQuality(QcSection):
     def compute_statistic(self, context, data):
         # base_qualities is in the form 
         # { columns: qualities, rows: {pos: counts} }
+        # Note: The FastQC documentation is incorrect - they do not compute
+        # quartiles/medians on a per-base basis, but rather on a per-bin
+        # basis, where bin sizes are determined by the read length.
+        # TODO: average over bins
         quals = data['columns']
         min_lower_quartile = None
         min_median = None
-        for base_counts in data['rows'].values():
+        for pos, base_counts in data['rows'].items():
             counts_cumsum = cumsum(base_counts)
             lower_quartile = weighted_lower_quantile(
                 quals,
@@ -693,10 +703,14 @@ class PerBaseQuality(QcSection):
         return (min_lower_quartile, min_median)
     
     def get_status_for(self, context, stat):
+        # TODO: decide how to average over bins. For now we only look at 
+        # medians.
         min_lower_quartile, min_median = stat
-        if min_lower_quartile < 5 or min_median < 20:
+        #if min_lower_quartile < 5 or min_median < 20:
+        if min_median < 20:
             return FAIL
-        if min_lower_quartile < 10 or min_median < 25:
+        #if min_lower_quartile < 10 or min_median < 25:
+        if min_median < 25:
             return WARN
         return PASS
     
@@ -711,7 +725,7 @@ class PerTileQuality(QcSection):
 class PerSequenceQuality(QcSection):
     name = 'qualities'
     display = 'Per Sequence Quality Scores'
-    anchor = 'atropos_per_sequence_quality_scores'
+    anchor = 'atropos_qualities'
     default_thresholds = (20, 27)
     html = """
 <p>The number of reads with average quality scores. Shows if a subset of reads
@@ -724,7 +738,7 @@ has poor quality. See the <a href="{}" target="_blank">Atropos help</a>.</p>
     
     def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_per_sequence_quality_scores_plot_{phase}_{read}'.format(
+            'id': 'atropos_qualities_plot_{phase}_{read}'.format(
                 phase=context['phase'], read=read),
             'title': 'Per Sequence Quality Scores: Read {}'.format(read),
             'ylab': 'Count',
@@ -742,12 +756,12 @@ has poor quality. See the <a href="{}" target="_blank">Atropos help</a>.</p>
         }
     
     def get_sample_plot_data(self, context, data):
-        return data['hist']
+        return dict((int(pos), count) for pos, count in data['hist'].items())
 
 class PerBaseContent(QcSection):
     name = 'bases'
     display = 'Per Base Sequence Content'
-    anchor = 'atropos_per_base_sequence_content'
+    anchor = 'atropos_bases'
     compare = operator.gt
     default_thresholds = (0.2, 0.1)
     header_html = """
@@ -755,38 +769,42 @@ class PerBaseContent(QcSection):
 bases has been called. See the <a href="{}" target="_blank">Atropos help</a>.</p>
 <p class="text-primary"><span class="glyphicon glyphicon-info-sign"></span>
 Click a heatmap row to see a line plot for that dataset.</p>
-<div id="atropos_per_base_sequence_content_plot_{{phase}}_{{read}}">
+""".format(ATROPOS_DOC_URL)
+    plot_html = """
+<div id="atropos_bases_plot_{phase}_{read}" class="atropos_bases_plot">
+    <h4 class="atropos_seq_heatmap_header">Per Base Sequence Content: Read {read}</h4>
     <h5><span class="s_name"><em class="text-muted">rollover for sample name</em></span></h5>
     <div class="atropos_seq_heatmap_key">
-        Position: <span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_pos">-</span>
-        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_t"> %T: <span>-</span></span></div>
-        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_c"> %C: <span>-</span></span></div>
-        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_a"> %A: <span>-</span></span></div>
-        <div><span id="atropos_seq_heatmap_{{phase}}_{{read}}_key_g"> %G: <span>-</span></span></div>
+        Position: <span id="atropos_seq_heatmap_{phase}_{read}_key_pos">-</span>
+        <div><span id="atropos_seq_heatmap_{phase}_{read}_key_t"> %T: <span>-</span></span></div>
+        <div><span id="atropos_seq_heatmap_{phase}_{read}_key_c"> %C: <span>-</span></span></div>
+        <div><span id="atropos_seq_heatmap_{phase}_{read}_key_a"> %A: <span>-</span></span></div>
+        <div><span id="atropos_seq_heatmap_{phase}_{read}_key_g"> %G: <span>-</span></span></div>
     </div>
-    <div id="atropos_seq_heatmap_{{phase}}_{{read}}_div" class="atropos-overlay-plot">
-        <div id="atropos_seq_{{phase}}_{{read}}" class="hc-plot">
-            <canvas id="atropos_seq_heatmap_{{phase}}_{{read}}" height="100%" width="800px" style="width:100%;"></canvas>
+    <div id="atropos_seq_heatmap_{phase}_{read}_div" class="atropos-overlay-plot">
+        <div id="atropos_seq_{phase}_{read}" class="hc-plot">
+            <canvas id="atropos_seq_heatmap_{phase}_{read}" height="100%" width="800px" style="width:100%;"></canvas>
         </div>
     </div>
     <div class="clearfix"></div>
-</div>""".format(ATROPOS_DOC_URL)
-    plot_html = """
+</div>
 <script type="text/javascript">
-    atropos_seq_content_heatmap_{phase}_{read} = SeqContentHeatmap({phase}, {read}, {data}, atropos_passfails_{phase});
+    atropos_seq_content_heatmap_{phase}_{read} = new SeqContentHeatmap("{phase}", {read}, {data}, atropos_passfails_{phase});
     $(function () {{ atropos_seq_content_heatmap_{phase}_{read}.draw(); }});
 </script>"""
     
     def compute_statistic(self, context, data):
+        max_diff = 0
         for row in data['rows'].values():
             acgt = row[:4]
             frac = tuple(base / sum(acgt) for base in acgt)
-            return max(
+            max_diff = max(max_diff,
                 abs(frac[0]-frac[3]),
                 abs(frac[1]-frac[2]))
+        return max_diff
     
     def get_sample_plot_data(self, context, data):
-        return ordered_dict(
+        return dict(
             (pos, dict(zip(('a','c','g','t'), row[:4])))
             for pos, row in data['rows'].items())
     
@@ -802,7 +820,7 @@ Click a heatmap row to see a line plot for that dataset.</p>
 class PerSequenceGC(QcSection):
     name = 'gc'
     display = 'Per Sequence GC Content'
-    anchor = 'atropos_per_sequence_gc_content'
+    anchor = 'atropos_gc'
     compare = operator.gt
     default_thresholds = (0.3, 0.15)
     html =  """
@@ -814,13 +832,12 @@ Atropos help</a>.</p>
     
     def add_to_context(self, context, data):
         theoretical_gc = theoretical_gc_name = None
-        max_total = 0
         
         tgc = getattr(config, 'atropos_config', {}).get('atropos_theoretical_gc', None)
         if tgc is not None:
             theoretical_gc_name = os.path.basename(tgc)
-            tgc_fn = 'fastqc_theoretical_gc_{}.txt'.format(tgc)
-            tgc_path = os.path.join(os.path.dirname(__file__), 'fastqc_theoretical_gc', tgc_fn)
+            tgc_fn = 'atropos_theoretical_gc_{}.txt'.format(tgc)
+            tgc_path = os.path.join(os.path.dirname(__file__), 'atropos_theoretical_gc', tgc_fn)
             if not os.path.isfile(tgc_path):
                 tgc_path = tgc
             try:
@@ -844,13 +861,14 @@ Atropos help</a>.</p>
         
         means = []
         sds = []
-        
+        max_total = 0
+
         for sample_id, (data1, data2) in data.items():
             for read_data in (data1, data2):
                 if theoretical_gc is None:
                     means.append(read_data['summary']['mean'])
                     sds.append(read_data['summary']['stdev'])
-                max_total = max(max_total, *read_data['hist'].values())
+                max_total = max(max_total, sum(read_data['hist'].values()))
         
         if theoretical_gc is None:
             normdist = NormalDistribution(mean(means), mean(sds))
@@ -879,7 +897,7 @@ Atropos help</a>.</p>
             return ordered_dict(
                 (pct, count * 100 / total)
                 for pct, count in gc)
-        gchist = data['hist']
+        gchist = dict((int(pos), count) for pos, count in data['hist'].items())
         total = sum(gchist.values())
         gcnorm = normalize_gc(gchist.items(), total)
         return (gchist, gcnorm)
@@ -888,7 +906,7 @@ Atropos help</a>.</p>
         plot_data = dict((sample_id, values[0]) for sample_id, values in data.items())
         plot_data_norm = dict((sample_id, values[1]) for sample_id, values in data.items())
         plot_config = {
-            'id': 'atropos_per_sequence_gc_content_plot_{phase}_{read}'.format(
+            'id': 'atropos_gc_plot_{phase}_{read}'.format(
                 phase=context['phase'], read=read),
             'title': 'Per Sequence GC Content: Read {}'.format(read),
             'ylab': 'Count',
@@ -914,16 +932,18 @@ Atropos help</a>.</p>
             'showInLegend': False,
         }
         plot_config['extra_series'] = [ [dict(esconfig)], [dict(esconfig)] ]
-        plot_config['extra_series'][0][0]['data'] = context['theoretical_gc']
+        plot_config['extra_series'][0][0]['data'] = [ 
+            (d[0], d[1] * 100)
+            for d in context['theoretical_gc'] ]
         plot_config['extra_series'][1][0]['data'] = [ 
-            (d[0], (d[1]/100.0) * context['max_total'])
+            (d[0], d[1] * context['max_total'])
             for d in context['theoretical_gc'] ]
         return linegraph.plot([plot_data_norm, plot_data], plot_config)
 
 class PerBaseN(QcSection):
     name = 'per_base_N_content'
     display = 'Per Base N Content'
-    anchor = 'atropos_per_base_n_content'
+    anchor = 'atropos_per_base_N_content'
     compare = operator.gt
     threshold_statistic = 'frac_N'
     default_thresholds = (0.2, 0.05)
@@ -940,10 +960,10 @@ See the <a href="{}" target="_blank">Atropos help</a>.</p>
             nidx = bases['columns'].index('N')
             return dict(
                 n_counts = ordered_dict(
-                    (pos, bases['rows'][pos][nidx])
+                    (int(pos), bases['rows'][pos][nidx])
                     for pos in bases['rows'].keys()),
                 total_counts = ordered_dict(
-                    (pos, sum(bases['rows'][pos]))
+                    (int(pos), sum(bases['rows'][pos]))
                     for pos in bases['rows'].keys()))
         
         section_data = {}
@@ -957,11 +977,13 @@ See the <a href="{}" target="_blank">Atropos help</a>.</p>
         return section_data
     
     def compute_statistic(self, context, data):
-        return sum(data['n_counts'].values()) / sum(data['total_counts'].values())
+        return max(
+            data['n_counts'][pos] / data['total_counts'][pos]
+            for pos in data['total_counts'].keys())
 
     def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_per_base_n_content_plot_{phase}_{read}'.format(
+            'id': 'atropos_per_base_N_content_plot_{phase}_{read}'.format(
                 phase=context['phase'], read=read),
             'title': 'Per Base N Content: Read {}'.format(read),
             'ylab': 'Percentage N-Count',
@@ -984,13 +1006,13 @@ See the <a href="{}" target="_blank">Atropos help</a>.</p>
         """Create the HTML for the per base N content plot.
         """
         return ordered_dict(
-            (key, data['n_counts'].get(key, 0) / data['total_counts'].get(key))
+            (key, data['n_counts'].get(key, 0) * 100 / data['total_counts'].get(key))
             for key in data['total_counts'].keys())
 
 class SequenceLength(QcSection):
     name = 'lengths'
     display = 'Sequence Length Distribution'
-    anchor = 'atropos_sequence_length_distribution'
+    anchor = 'atropos_lengths'
     threshold_statistic = 'length_range'
     html = """
 <p>The distribution of fragment sizes (read lengths) found.
@@ -1036,7 +1058,7 @@ See the <a href="#general_stats">General Statistics Table</a>.</p>"""
     
     def get_plot_config(self, context, read=1):
         return {
-            'id': 'atropos_sequence_length_distribution_plot_{phase}_{read}'.format(
+            'id': 'atropos_lengths_plot_{phase}_{read}'.format(
                 phase=context['phase'], read=read),
             'title': 'Sequence Length Distribution: Read {}'.format(read),
             'ylab': 'Read Count',
@@ -1109,7 +1131,7 @@ def hist_to_means(hist):
     """Get weighted means for each column in a position histogram.
     """
     return dict(
-        (pos, weighted_mean(hist['columns'], counts))
+        (int(pos), weighted_mean(hist['columns'], counts))
         for pos, counts in hist['rows'].items())
 
 def get_status_cols(statuses):
@@ -1159,7 +1181,7 @@ def simplify(obj):
     #         except KeyError:
     #             pass
     #     if len(data) == 0:
-    #         log.debug('sequence_length_distribution not found in FastQC reports')
+    #         log.debug('lengths not found in FastQC reports')
     #         return None
     #
     #     plot_config = {

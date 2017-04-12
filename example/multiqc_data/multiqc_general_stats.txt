@@ -1,2 +1,6 @@
-Sample	Atropos_total_record_count	Atropos: Pre-trim QC_percent_fails_pre	Atropos_input_format	Atropos_fraction_records_with_adapters	Atropos: Post-trim QC_percent_fails_post	Atropos_fraction_bp_trimmed	Atropos_mean_sequence_length
-test	10000	40.0	FASTQ, Paired, w/ Qualities	0.1265	20.0	0.031300400000000006	125.0
+Sample	Atropos_input_format	Atropos_fraction_bp_trimmed	Atropos_mean_sequence_length	Atropos: Post-trim QC_percent_fails_post	Atropos: Pre-trim QC_percent_fails_pre	Atropos_total_record_count	Atropos_fraction_records_with_adapters	FastQC_percent_duplicates	FastQC_percent_gc	FastQC_percent_fails	FastQC_avg_sequence_length	FastQC_total_sequences
+test	FASTQ, Paired, w/ Qualities	0.031300400000000006	125.0	40.0	40.0	10000	0.1265					
+test.1								0.9900000000000091	21.0	0.0	125.0	10000.0
+test.2								0.2600000000000051	22.0	16.666666666666664	125.0	10000.0
+trimmed.1								1.230000000000004	20.0	25.0	120.5067	10000.0
+trimmed.2								0.29000000000000625	21.0	25.0	121.7223	10000.0

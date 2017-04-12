@@ -4,6 +4,9 @@
 .atropos_passfail_progress .progress-bar {
   cursor: pointer;
 }
+.mqc-section {
+  
+}
 .mqc-section-atropos .popover .popover-content {
   font-size: 11px;
   max-height: 300px;
@@ -64,7 +67,7 @@
 #atropos_pre_seq_heatmap,#atropos_post_seq_heatmap {
   cursor: pointer;
 }
-#atropos_pre_seq_heatmap_div,#atropos_pre_seq_heatmap_div .hc-plot-wrapper {
+#atropos_pre_seq_heatmap_div,#atropos_post_seq_heatmap_div .hc-plot-wrapper {
   height: 300px;
 }
 #atropos_pre_seq_heatmap_footer,#atropos_post_seq_heatmap_footer {
@@ -73,6 +76,14 @@
 #atropos_pre_sequence_content_plot,#atropos_post_sequence_content_plot h5 {
   display: inline-block;
   height: 18px;
+}
+.atropos_bases_plot {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.atropos_seq_heatmap_header {
+  text-align: center;
 }
 .atropos_seq_heatmap_key {
   font-size: 12px;
@@ -89,7 +100,12 @@
 .mqc-module-section {
   padding: 10px;
 }
-
+.pair-plot-wrapper {
+  padding: 10px;
+}
+.mqc_hcplot_plotgroup {
+  padding-bottom: 10px;
+}
 #atropos_pre_seq_heatmap_key_t,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid red; }
 #atropos_pre_seq_heatmap_key_c,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid blue; }
 #atropos_pre_seq_heatmap_key_a,#atropos_post_seq_heatmap_key_t { border-bottom: 1px solid green; }

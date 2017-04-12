@@ -1,10 +1,10 @@
 // Javascript for the atropos MultiQC Mod
 
 // Set up listeners etc on page load
-function add_listeners(phase, passfails){
+function add_atropos_listeners(phase, passfails){
     // Add the pass / warning / fails counts to each of the atropos submodule headings
     $.each(passfails, function(k, vals){
-        var pid = '#atropos_'+k+'_'+self.phase;
+        var pid = '#atropos_'+k;
         var total = 0;
         var v = { 'pass': 0, 'warn': 0, 'fail': 0 };
         $.each(vals, function(s_name, status){
@@ -20,13 +20,15 @@ function add_listeners(phase, passfails){
     });
 
     // Create popovers on click
-    $('.mqc-section-atropos .atropos_passfail_progress .progress-bar').mouseover(function(){
+    $('.mqc-section-atropos-'+phase+' .atropos_passfail_progress .progress-bar').mouseover(function(){
         // Does this element already have a popover?
         if ($(this).attr('data-original-title')) { return false; }
         // Create it
         var pid = $(this).closest('h3').attr('id');
-        var k = pid.substr(7);
+        var k = pid.substr(8);
+        //alert(k)
         var vals = passfails[k];
+        //alert(vals)
         var passes = $(this).hasClass('progress-bar-success') ? true : false;
         var warns = $(this).hasClass('progress-bar-warning') ? true : false;
         var fails = $(this).hasClass('progress-bar-danger') ? true : false;
@@ -144,7 +146,7 @@ function SeqContentHeatmap(phase, read, data, passfails) {
         if(s_status == 'pass'){ s_status_class = 'label-success'; }
         if(s_status == 'warn'){ s_status_class = 'label-warning'; }
         if(s_status == 'fail'){ s_status_class = 'label-danger'; }
-        $('#atropos_per_base_sequence_content_plot_'+_this.phase+'_'+_this.read+' .s_name').html(s_name + ' <span class="label s_status '+s_status_class+'">'+s_status+'</span>');
+        $('#atropos_bases_plot_'+_this.phase+'_'+_this.read+' .s_name').html(s_name + ' <span class="label s_status '+s_status_class+'">'+s_status+'</span>');
 
         // Show the sequence base percentages on the bar plots below
         // http://stackoverflow.com/questions/6735470/get-pixel-color-from-canvas-on-mouseover
@@ -166,7 +168,7 @@ function SeqContentHeatmap(phase, read, data, passfails) {
 
     // Remove sample name again when mouse leaves
     $('#atropos_seq_heatmap').mouseout(function(e) {
-      $('#atropos_per_base_sequence_content_'+_this.phase+'_'+_this.read+'_plot .s_name').html('<em class="text-muted">rollover for sample name</em>');
+      $('#atropos_bases_'+_this.phase+'_'+_this.read+'_plot .s_name').html('<em class="text-muted">rollover for sample name</em>');
       $('#atropos_seq_heatmap_'+_this.phase+'_'+_this.read+'_key_pos').text('-');
       $('#atropos_seq_heatmap_'+_this.phase+'_'+_this.read+'_key_t span').text('-');
       $('#atropos_seq_heatmap_'+_this.phase+'_'+_this.read+'_key_c span').text('-');
@@ -184,7 +186,7 @@ function SeqContentHeatmap(phase, read, data, passfails) {
       var idx = Math.floor(y/_this.s_height);
       var s_name = _this.sample_names[idx];
       if(s_name !== undefined){
-        _this.plot_single_seqcontent(s_name, );
+        _this.plot_single_seqcontent(s_name);
       }
     });
     $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_prev_'+_this.phase+'_'+_this.read, function(e){
@@ -201,7 +203,7 @@ function SeqContentHeatmap(phase, read, data, passfails) {
     });
     $('#mqc-module-section-atropos').on('click', '#atropos_sequence_content_single_back_'+_this.phase+'_'+_this.read, function(e){
         e.preventDefault();
-        $('#atropos_per_base_sequence_content_plot_'+_this.phase+'_'+_this.read).slideDown();
+        $('#atropos_bases_plot_'+_this.phase+'_'+_this.read).slideDown();
         $('#atropos_sequence_content_single_wrapper_'+_this.phase+'_'+_this.read).slideUp(function(){
           $(this).remove();
         });
@@ -209,11 +211,11 @@ function SeqContentHeatmap(phase, read, data, passfails) {
 
     // Highlight the custom heatmap
     $(document).on('mqc_highlights mqc_hidesamples mqc_renamesamples mqc_plotresize', function(e){
-        atropos_seq_content_heatmap();
+        _this.draw();
     });
     // Seq content - window resized
     $(window).resize(function() {
-        atropos_seq_content_heatmap();
+        _this.draw();
     });
 
     this.draw = function() {
@@ -222,9 +224,9 @@ function SeqContentHeatmap(phase, read, data, passfails) {
         _this.sample_statuses = [];
         var p_data = {};
         var hidden_samples = 0;
-        $.each(atropos_seq_content_data, function(s_name, data){
+        $.each(_this.data, function(s_name, data){
             // rename sample names
-            var t_status = atropos_passfails['bases'][s_name];
+            var t_status = _this.passfails['bases_'+_this.phase][s_name];
             $.each(window.mqc_rename_f_texts, function(idx, f_text){
                 if(window.mqc_rename_regex_mode){
                     var re = new RegExp(f_text,'g');
@@ -353,11 +355,11 @@ function SeqContentHeatmap(phase, read, data, passfails) {
             ctx.lineTo(_this.c_width, _this.ypos);
             ctx.stroke();
         }
-    }
+    };
     
     this.plot_single_seqcontent=function(s_name){
         _this.current_single_plot = s_name;
-        var data = _this.data.atropos_seq_content_data[s_name];
+        var data = _this.data[s_name];
         var plot_data = [
             {'name': '% T', 'data':[]},
             {'name': '% C', 'data':[]},
@@ -375,14 +377,14 @@ function SeqContentHeatmap(phase, read, data, passfails) {
 
         // Create plot div if it doesn't exist, and hide overview
         if($('#atropos_sequence_content_single_wrapper_'+_this.phase+'_'+_this.read).length == 0) {
-            $('#atropos_per_base_sequence_content_plot_'+_this.phase+'_'+_this.read).slideUp();
+            $('#atropos_bases_plot_'+_this.phase+'_'+_this.read).slideUp();
             var newplot = '<div id="atropos_sequence_content_single_wrapper_'+_this.phase+'_'+_this.read+'"> \
             <div id="atropos_sequence_content_single_controls_'+_this.phase+'_'+_this.read+'"><div class="btn-group"> \
             <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_prev_'+_this.phase+'_'+_this.read+'">&laquo; Prev</button> \
             <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_next_'+_this.phase+'_'+_this.read+'">Next &raquo;</button> \
             </div> <button class="btn btn-default btn-sm" id="atropos_sequence_content_single_back_'+_this.phase+'_'+_this.read+'">Back to overview heatmap</button></div>\
             <div class="hc-plot-wrapper"><div id="atropos_sequence_content_single_'+_this.phase+'_'+_this.read+'" class="hc-plot hc-line-plot"><small>loading..</small></div></div></div>';
-            $(newplot).insertAfter('#atropos_per_base_sequence_content_plot_'+_this.phase+'_'+_this.read).hide().slideDown();
+            $(newplot).insertAfter('#atropos_bases_plot_'+_this.phase+'_'+_this.read).hide().slideDown();
         }
 
         $('#atropos_sequence_content_single_'+_this.phase+'_'+_this.read).highcharts({
@@ -436,7 +438,7 @@ function SeqContentHeatmap(phase, read, data, passfails) {
             },
             series: plot_data
         });
-    }
+    };
 };
 
 // Find the position of the mouse cursor over the canvas
