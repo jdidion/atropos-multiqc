@@ -325,14 +325,11 @@ function SeqContentHeatmap(phase, read, data, passfails) {
                     bp = parseInt(bp);
                     var this_width = (bp - last_bp) * (_this.c_width / _this.max_bp);
                     last_bp = bp;
-                    // Very old versions of atropos give counts instead of percentages
-                    if(v['t'] > 100){
-                        var t = v['t'] + v['a'] + v['c'] + v['g'];
-                        v['t'] = (v['t']/t)*100;
-                        v['a'] = (v['a']/t)*100;
-                        v['c'] = (v['c']/t)*100;
-                        v['g'] = (v['g']/t)*100;
-                    }
+                    var t = v['t'] + v['a'] + v['c'] + v['g'];
+                    v['t'] = (v['t']/t)*100;
+                    v['a'] = (v['a']/t)*100;
+                    v['c'] = (v['c']/t)*100;
+                    v['g'] = (v['g']/t)*100;
                     var r = Math.round((v['t'] / 100)*255);
                     var g = Math.round((v['a'] / 100)*255);
                     var b = Math.round((v['c'] / 100)*255);

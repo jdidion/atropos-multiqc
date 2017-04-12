@@ -748,6 +748,8 @@ class PerBaseContent(QcSection):
     name = 'bases'
     display = 'Per Base Sequence Content'
     anchor = 'atropos_per_base_sequence_content'
+    compare = operator.gt
+    default_thresholds = (0.2, 0.1)
     header_html = """
 <p>The proportion of each base position for which each of the four normal DNA
 bases has been called. See the <a href="{}" target="_blank">Atropos help</a>.</p>
@@ -775,8 +777,18 @@ Click a heatmap row to see a line plot for that dataset.</p>
     $(function () {{ atropos_seq_content_heatmap_{phase}_{read}.draw(); }});
 </script>"""
     
+    def compute_statistic(self, context, data):
+        for row in data['rows'].values():
+            acgt = row[:4]
+            frac = tuple(base / sum(acgt) for base in acgt)
+            return max(
+                abs(frac[0]-frac[3]),
+                abs(frac[1]-frac[2]))
+    
     def get_sample_plot_data(self, context, data):
-        return dict(data[1])
+        return ordered_dict(
+            (pos, dict(zip(('a','c','g','t'), row[:4])))
+            for pos, row in data['rows'].items())
     
     def format_html(self, context):
         return self.header_html + context['plot']

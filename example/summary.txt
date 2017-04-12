@@ -12,9 +12,9 @@ Input files:
   /Users/didionjp/projects/atropos-multiqc/example/test.1.fq.gz
   /Users/didionjp/projects/atropos-multiqc/example/test.2.fq.gz
 
-Start time: 2017-04-11T10:49:53.834183
-Wallclock time: 22.80 s (2280 us/read; 0.03 M reads/minute)
-CPU time (main process): 22.06 s
+Start time: 2017-04-12T08:17:52.167281
+Wallclock time: 25.10 s (2510 us/read; 0.02 M reads/minute)
+CPU time (main process): 23.37 s
 
 --------
 Trimming

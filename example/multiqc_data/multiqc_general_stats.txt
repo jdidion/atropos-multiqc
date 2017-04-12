@@ -1,2 +1,2 @@
-Sample	Atropos_input_format	Atropos_mean_sequence_length	Atropos_fraction_bp_trimmed	Atropos_total_record_count	Atropos_fraction_records_with_adapters
-test	FASTQ, Paired, w/ Qualities	125.0	0.031300400000000006	10000	0.1265
+Sample	Atropos_total_record_count	Atropos: Pre-trim QC_percent_fails_pre	Atropos_input_format	Atropos_fraction_records_with_adapters	Atropos: Post-trim QC_percent_fails_post	Atropos_fraction_bp_trimmed	Atropos_mean_sequence_length
+test	10000	40.0	FASTQ, Paired, w/ Qualities	0.1265	20.0	0.031300400000000006	125.0
