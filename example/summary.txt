@@ -2,7 +2,7 @@
 Atropos
 =======
 
-Atropos version: 1.0.23+115.g299dfba
+Atropos version: 1.0.23+115.g299dfba.dirty
 Python version: 3.5.2
 Command line parameters: trim -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGCCGTCTTCTGCTTG -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT -pe1 test.1.fq.gz -pe2 test.2.fq.gz -o trimmed.1.fq.gz -p trimmed.2.fq.gz --report-file summary --report-formats txt json --stats both:tiles
 
@@ -12,9 +12,9 @@ Input files:
   /Users/didionjp/projects/atropos-multiqc/example/test.1.fq.gz
   /Users/didionjp/projects/atropos-multiqc/example/test.2.fq.gz
 
-Start time: 2017-04-12T14:31:47.647965
-Wallclock time: 31.00 s (3100 us/read; 0.02 M reads/minute)
-CPU time (main process): 29.39 s
+Start time: 2017-04-12T17:54:19.913166
+Wallclock time: 30.44 s (3044 us/read; 0.02 M reads/minute)
+CPU time (main process): 28.67 s
 
 --------
 Trimming
@@ -57,15 +57,15 @@ Bases preceding removed adapters:
 Overview of removed sequences:
 length count expect max.err error counts     
 ------ ----- ------ ------- -----------------
-     3   222  156.2       0 222 0 0 0 0 0 0  
-     4   106   39.1       0 106 0 0 0 0 0 0  
-     5    29    9.8       0 29 0 0 0 0 0 0   
-     6    31    2.4       0 31 0 0 0 0 0 0   
-     7    31    0.6       0 31 0 0 0 0 0 0   
-     8    26    0.2       0 26 0 0 0 0 0 0   
-     9    29    0.0       0 28 1 0 0 0 0 0   
-    10    33    0.0       1 30 3 0 0 0 0 0   
-    11    20    0.0       1 19 1 0 0 0 0 0   
+     3   222  312.5       0 222 0 0 0 0 0 0  
+     4   106   78.1       0 106 0 0 0 0 0 0  
+     5    29   39.1       0 29 0 0 0 0 0 0   
+     6    31   19.5       0 31 0 0 0 0 0 0   
+     7    31    9.8       0 31 0 0 0 0 0 0   
+     8    26    2.4       0 26 0 0 0 0 0 0   
+     9    29    0.6       0 28 1 0 0 0 0 0   
+    10    33    0.3       1 30 3 0 0 0 0 0   
+    11    20    0.1       1 19 1 0 0 0 0 0   
     12    25    0.0       1 24 1 0 0 0 0 0   
     13    21    0.0       1 18 3 0 0 0 0 0   
     14    25    0.0       1 25 0 0 0 0 0 0   
@@ -169,15 +169,15 @@ Bases preceding removed adapters:
 Overview of removed sequences:
 length count expect max.err error counts
 ------ ----- ------ ------- ------------
-     3    44  156.2       0 44 0 0 0 0  
-     4    34   39.1       0 34 0 0 0 0  
-     5    35    9.8       0 35 0 0 0 0  
-     6    33    2.4       0 33 0 0 0 0  
-     7    33    0.6       0 33 0 0 0 0  
-     8    30    0.2       0 30 0 0 0 0  
-     9    30    0.0       0 30 0 0 0 0  
-    10    32    0.0       1 30 2 0 0 0  
-    11    19    0.0       1 19 0 0 0 0  
+     3    44  312.5       0 44 0 0 0 0  
+     4    34   78.1       0 34 0 0 0 0  
+     5    35   39.1       0 35 0 0 0 0  
+     6    33   19.5       0 33 0 0 0 0  
+     7    33    9.8       0 33 0 0 0 0  
+     8    30    2.4       0 30 0 0 0 0  
+     9    30    0.6       0 30 0 0 0 0  
+    10    32    0.3       1 30 2 0 0 0  
+    11    19    0.1       1 19 0 0 0 0  
     12    26    0.0       1 25 1 0 0 0  
     13    23    0.0       1 21 2 0 0 0  
     14    25    0.0       1 25 0 0 0 0  
